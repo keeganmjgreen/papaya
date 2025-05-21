@@ -37,10 +37,17 @@ class GeneralPyaType(abc.ABC):
     def prevalidate_column(self, df: pd.DataFrame) -> None:
         return
 
-    def process_getter_value(value: Any) -> Any:
-        return value
+    def process_getter_value(self, value: Any) -> Any:
+        if not hasattr(value, "__len__") and pd.isna(value):
+            return None
+        elif type(self.annotated_type) is type and not isinstance(
+            value, self.annotated_type
+        ):
+            return self.annotated_type(value)
+        else:
+            return value
 
-    def process_setter_value(value: Any) -> Any:
+    def process_setter_value(self, value: Any) -> Any:
         return value
 
 
@@ -105,13 +112,14 @@ class EnumPyaType(GeneralPyaType):
             return pa.Column(str, nullable=self.nullable, **kwargs)
         elif self.config.store_enum_members_as == "values":
             enum_value_pya_type = find_pya_type(
-                self.field_name,
-                self.enum_value_type,
-                self.config,
-                self.nullable,
+                field_name=self.field_name,
+                annotated_type=self.enum_value_type,
+                annotated_with=None,
+                nullable=self.nullable,
+                config=self.config,
             )
             return enum_value_pya_type.validator(
-                df, checks=(lambda x: x in self.enum_member_values)
+                df, checks=[pa.Check(lambda ser: ser.isin(self.enum_member_values))]
             )
 
     @override
@@ -119,9 +127,27 @@ class EnumPyaType(GeneralPyaType):
         if self.config.store_enum_members_as == "names":
             df[self.field_name] = (
                 df[self.field_name]
-                .apply(lambda x: x.name if not isinstance(x, str) else x)
+                .apply(lambda x: x.name if isinstance(x, self.annotated_type) else x)
                 .astype(str)
             )
+        elif self.config.store_enum_members_as == "values":
+            df[self.field_name] = (
+                df[self.field_name]
+                .apply(lambda x: x.value if isinstance(x, self.annotated_type) else x)
+            )
+            try:
+                df[self.field_name] = df[self.field_name].astype(self.enum_value_type)
+            except TypeError:
+                pass
+
+    @override
+    def process_getter_value(self, value: Any) -> Any:
+        if self.config.store_enum_members_as == "members":
+            return value
+        elif self.config.store_enum_members_as == "names":
+            return self.annotated_type[value]
+        elif self.config.store_enum_members_as == "values":
+            return self.annotated_type(value)
 
 
 @dataclasses.dataclass

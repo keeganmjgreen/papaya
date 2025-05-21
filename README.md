@@ -123,7 +123,6 @@ user_df.loc[0, "name"]  # `"Burn-E"`
 - timedelta
 - ns/ms
 - list/List
-- Enum
 - Literal
 - Categorical
 - Filter
