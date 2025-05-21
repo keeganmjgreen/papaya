@@ -9,6 +9,7 @@ import pandas as pd
 from pandera.engines.pandas_engine import DateTime
 
 from objects_dataframe_base import ObjectsDataframeBase
+from pya_types import find_pya_type
 from utils import get_exactly_one
 
 
@@ -95,15 +96,12 @@ def dataframe_backed_object(cls):
             value = self.__df.loc[self.__df_key, field_name]
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
-            annotated_type, annotated_with, nullable = type(
-                self
-            )._process_type_annotation(field.type)
-            if not hasattr(value, "__len__") and pd.isna(value):
-                return None
-            elif type(annotated_type) is type and not isinstance(value, annotated_type):
-                return annotated_type(value)
-            else:
-                return value
+            pya_type = find_pya_type(
+                field_name,
+                *type(self)._process_type_annotation(field.type),
+                config=self.__df.pya_types_config,
+            )
+            return pya_type.process_getter_value(value)
         else:
             return getattr(self, f"__{field_name}")
 

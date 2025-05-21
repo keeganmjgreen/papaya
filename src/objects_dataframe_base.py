@@ -15,7 +15,6 @@ from pandera.backends.pandas.container import DataFrameSchemaBackend
 from pandera.engines.pandas_engine import DateTime
 
 from pya_types import PyaTypesConfig, find_pya_type
-from utils import get_exactly_one
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):

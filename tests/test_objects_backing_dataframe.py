@@ -292,8 +292,62 @@ class TestCompatibilityWithEnums:
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
 
-    def test_storing_enum_members_as_values(self) -> None:
-        pass
+    def test_storing_enum_members_as_integer_values(self) -> None:
+        foo_df = self.FooDataframe([self.foo_instance])
+        foo_df.store_enum_members_as = "values"
+        foo_df.validate()
+        assert foo_df.dtypes["enum_field"] == np.dtype("int64")
+        assert isinstance(foo_df.loc[0, "enum_field"], np.int64)
+        assert foo_df.loc[0, "enum_field"] == 1
+        (foo_0,) = list(foo_df)
+        assert isinstance(foo_0.enum_field, AnEnum)
+        assert foo_0.enum_field is AnEnum.A
+
+    def test_storing_enum_members_as_string_values(self) -> None:
+        class AnEnum(Enum):
+            A = "a"
+            B = "b"
+            C = "c"
+
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            enum_field: AnEnum
+
+        foo_instance = Foo(enum_field=AnEnum.A)
+        FooDataframe = ObjectsBackingDataframe[Foo]
+        foo_df = FooDataframe([foo_instance])
+        foo_df.store_enum_members_as = "values"
+        foo_df.validate()
+        assert foo_df.dtypes["enum_field"] == np.dtype("O")
+        assert isinstance(foo_df.loc[0, "enum_field"], str)
+        assert foo_df.loc[0, "enum_field"] == "a"
+        (foo_0,) = list(foo_df)
+        assert isinstance(foo_0.enum_field, AnEnum)
+        assert foo_0.enum_field is AnEnum.A
+
+    def test_storing_enum_members_as_object_values(self) -> None:
+        class AnEnum(Enum):
+            A = ZoneInfo("America/Toronto")
+            B = ZoneInfo("Asia/Kolkata")
+            C = ZoneInfo("Asia/Tokyo")
+
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            enum_field: AnEnum
+
+        foo_instance = Foo(enum_field=AnEnum.A)
+        FooDataframe = ObjectsBackingDataframe[Foo]
+        foo_df = FooDataframe([foo_instance])
+        foo_df.store_enum_members_as = "values"
+        foo_df.validate()
+        assert foo_df.dtypes["enum_field"] == np.dtype("O")
+        assert isinstance(foo_df.loc[0, "enum_field"], ZoneInfo)
+        assert foo_df.loc[0, "enum_field"] == ZoneInfo("America/Toronto")
+        (foo_0,) = list(foo_df)
+        assert isinstance(foo_0.enum_field, AnEnum)
+        assert foo_0.enum_field is AnEnum.A
 
 
 def _check_foo_instance(foo_instance: type) -> None:
