@@ -39,7 +39,7 @@ def dataframe_backed_object(cls):
 
     cls.__init__ = __init__
 
-    def _process_type_annotation(type_annotation: type) -> tuple[type, bool, type]:
+    def _process_type_annotation(type_annotation: type) -> tuple[type, type, bool]:
         if isinstance(type_annotation, types.UnionType) or isinstance(
             type_annotation, typing._UnionGenericAlias
         ):
@@ -84,7 +84,7 @@ def dataframe_backed_object(cls):
                     "```"
                 )
 
-        return type_annotation, nullable, annotated_with
+        return type_annotation, annotated_with, nullable
 
     for field in dataclasses.fields(cls):
         _process_type_annotation(field.type)
@@ -95,7 +95,7 @@ def dataframe_backed_object(cls):
             value = self.__df.loc[self.__df_key, field_name]
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
-            annotated_type, nullable, annotated_with = type(
+            annotated_type, annotated_with, nullable = type(
                 self
             )._process_type_annotation(field.type)
             if not hasattr(value, "__len__") and pd.isna(value):

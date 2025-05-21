@@ -14,6 +14,7 @@ from pandera.backends.base import BaseSchemaBackend
 from pandera.backends.pandas.container import DataFrameSchemaBackend
 from pandera.engines.pandas_engine import DateTime
 
+from pya_types import PyaTypesConfig, find_pya_type
 from utils import get_exactly_one
 
 
@@ -46,94 +47,26 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
     def _get_dataframe_schema(self) -> DataframeSchema:
         return DataframeSchema(
             {
-                f.name: self._get_column_schema(
+                f.name: find_pya_type(
                     f.name,
                     *self._dataframe_objects_class._process_type_annotation(f.type),
-                )
+                    config=self.pya_types_config,
+                ).validator(self)
                 for f in dataclasses.fields(self._dataframe_objects_class)
             }
         )
 
-    def _get_column_schema(
-        self,
-        field_name: str,
-        annotated_type: type,
-        nullable: bool,
-        annotated_with: type | None = None,
-        **kwargs,
-    ) -> pa.Column:
-        if annotated_type is bool and nullable:
-            if getattr(self, "store_nullable_bools_as_objects", False):
-                self[field_name] = self[field_name].astype(object)
-                return pa.Column(object, nullable=True, **kwargs)
-            else:
-                self[field_name] = self[field_name].astype(pd.BooleanDtype())
-                warnings.warn(
-                    "Using Pandas' experimental `BooleanDtype` for nullable bool field. "
-                    "To avoid this, set "
-                    "`<ObjectsBackingDataframe instance>.store_nullable_bools_as_objects = True`."
-                )
-                return pa.Column(pd.BooleanDtype(), nullable=True, **kwargs)
-
-        if annotated_type is dt.date:
-            return pa.Column(object, nullable=nullable, **kwargs)
-
-        if issubclass(annotated_type, Enum):
-            store_enum_members_as = getattr(self, "store_enum_members_as", "members")
-            if store_enum_members_as == "members":
-                return pa.Column(object, nullable=nullable, **kwargs)
-            elif store_enum_members_as == "names":
-                self[field_name] = (
-                    self[field_name]
-                    .apply(lambda x: x.name if not isinstance(x, str) else x)
-                    .astype(str)
-                )
-                return pa.Column(str, nullable=nullable, **kwargs)
-            elif store_enum_members_as == "values":
-                member_values = {
-                    member.value for member in annotated_type.__members__.values()
-                }
-                try:
-                    enum_value_type = get_exactly_one(
-                        set(type(x) for x in member_values)
-                    )
-                except ValueError:
-                    warnings.warn(
-                        f"The member values of enum `{annotated_type.__name__}` are not all of the "
-                        "same type. Using `object`."
-                    )
-                    enum_value_type = object
-                return self._get_column_schema(
-                    field_name,
-                    enum_value_type,
-                    nullable,
-                    checks=(lambda x: x in member_values),
-                )
-
-        if annotated_type is int and nullable:
-            if getattr(self, "store_nullable_ints_as_floats", False):
-                self[field_name] = self[field_name].astype(float)
-                return pa.Column(float, nullable=True, **kwargs)
-            else:
-                self[field_name] = self[field_name].astype(pd.Int64Dtype())
-                warnings.warn(
-                    "Using Pandas' experimental `Int64Dtype` for nullable integer field. "
-                    "To avoid this, set "
-                    "`<ObjectsBackingDataframe instance>.store_nullable_ints_as_floats = True`."
-                )
-                return pa.Column(pd.Int64Dtype(), nullable=True, **kwargs)
-
-        if annotated_type is pd.Timestamp or annotated_type is dt.datetime:
-            annotated_with: DateTime
-            return pa.Column(annotated_with, nullable=nullable, **kwargs)
-
-        if annotated_type is str:
-            return pa.Column(object, nullable=nullable, **kwargs)
-
-        try:
-            return pa.Column(annotated_type, nullable=nullable, **kwargs)
-        except TypeError:
-            return pa.Column(object, nullable=nullable, **kwargs)
+    @property
+    def pya_types_config(self) -> PyaTypesConfig:
+        return PyaTypesConfig(
+            store_nullable_bools_as_objects=getattr(
+                self, "store_nullable_bools_as_objects", False
+            ),
+            store_enum_members_as=getattr(self, "store_enum_members_as", "members"),
+            store_nullable_ints_as_floats=getattr(
+                self, "store_nullable_ints_as_floats", False
+            ),
+        )
 
     @abc.abstractmethod
     def __iter__(self) -> Iterator[T]:
