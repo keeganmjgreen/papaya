@@ -1,12 +1,13 @@
 import dataclasses
 import datetime as dt
 from enum import Enum
-from typing import Annotated, Optional, Union
+from typing import Annotated, Literal, Optional, Union
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
+import pandera as pa
 import pytest
 from pandera.engines.pandas_engine import DateTime
 
@@ -77,6 +78,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         float_field: float
         int_field: int
         list_field: list[int]
+        literal_field: Literal[1, 2, 3]
         pandas_timestamp_w_tzinfo_field: Annotated[
             pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))
         ]
@@ -98,6 +100,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         float_field=4.2,
         int_field=42,
         list_field=[4, 2],
+        literal_field=1,
         pandas_timestamp_w_tzinfo_field=pd.Timestamp(
             "2000-04-02 23:59", tz="America/Toronto"
         ),
@@ -128,13 +131,14 @@ class TestCompatibilityWithNonNullableDataTypes:
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
         df.validate()
-        assert len(df.dtypes) == 15
+        assert len(df.dtypes) == 16
         assert df.dtypes["bool_field"] == np.dtype("bool")
         assert df.dtypes["date_field"] == np.dtype("O")
         assert df.dtypes["enum_field"] == np.dtype("O")
         assert df.dtypes["float_field"] == np.dtype("float64")
         assert df.dtypes["int_field"] == np.dtype("int64")
         assert df.dtypes["list_field"] == np.dtype("O")
+        assert df.dtypes["literal_field"] == np.dtype("int64")
         assert df.dtypes["pandas_timestamp_w_tzinfo_field"] == pd.DatetimeTZDtype(
             tz=ZoneInfo("America/Toronto")
         )
@@ -160,6 +164,7 @@ class TestCompatibilityWithNullableDataTypes:
         float_field: float | None = None
         int_field: int | None = None
         list_field: list[int] | None = None
+        literal_field: Literal[1, 2, 3, None] = None
         pandas_timestamp_w_tzinfo_field: (
             Annotated[pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))] | None
         ) = None
@@ -185,6 +190,7 @@ class TestCompatibilityWithNullableDataTypes:
         float_field=4.2,
         int_field=42,
         list_field=[4, 2],
+        literal_field=1,
         pandas_timestamp_w_tzinfo_field=pd.Timestamp(
             "2000-04-02 23:59", tz="America/Toronto"
         ),
@@ -239,12 +245,13 @@ class TestCompatibilityWithNullableDataTypes:
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
         df.validate()
-        assert len(df.dtypes) == 15
+        assert len(df.dtypes) == 16
         assert df.dtypes["bool_field"] == pd.BooleanDtype()
         assert df.dtypes["date_field"] == np.dtype("O")
         assert df.dtypes["float_field"] == np.dtype("float64")
         assert df.dtypes["int_field"] == pd.Int64Dtype()
         assert df.dtypes["list_field"] == np.dtype("O")
+        assert df.dtypes["literal_field"] == pd.Int64Dtype()
         assert df.dtypes["pandas_timestamp_w_tzinfo_field"] == pd.DatetimeTZDtype(
             tz=ZoneInfo("America/Toronto")
         )
@@ -281,6 +288,10 @@ class TestCompatibilityWithEnums:
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
 
+        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        with pytest.raises(pa.errors.SchemaError):
+            foo_df.validate()
+
     def test_storing_enum_members_as_names(self) -> None:
         foo_df = self.FooDataframe([self.foo_instance])
         foo_df.store_enum_members_as = "names"
@@ -291,6 +302,10 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
+
+        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        with pytest.raises(pa.errors.SchemaError):
+            foo_df.validate()
 
     def test_storing_enum_members_as_integer_values(self) -> None:
         foo_df = self.FooDataframe([self.foo_instance])
@@ -303,6 +318,10 @@ class TestCompatibilityWithEnums:
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
 
+        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        with pytest.raises(pa.errors.SchemaError):
+            foo_df.validate()
+
     def test_storing_enum_members_as_string_values(self) -> None:
         class AnEnum(Enum):
             A = "a"
@@ -314,9 +333,8 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-        foo_instance = Foo(enum_field=AnEnum.A)
         FooDataframe = ObjectsBackingDataframe[Foo]
-        foo_df = FooDataframe([foo_instance])
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
@@ -325,6 +343,10 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
+
+        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        with pytest.raises(pa.errors.SchemaError):
+            foo_df.validate()
 
     def test_storing_enum_members_as_object_values(self) -> None:
         class AnEnum(Enum):
@@ -337,9 +359,8 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-        foo_instance = Foo(enum_field=AnEnum.A)
         FooDataframe = ObjectsBackingDataframe[Foo]
-        foo_df = FooDataframe([foo_instance])
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
@@ -348,6 +369,30 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert isinstance(foo_0.enum_field, AnEnum)
         assert foo_0.enum_field is AnEnum.A
+
+
+class TestCompatibilityWithLiterals:
+    @dataframe_backed_object
+    @dataclasses.dataclass
+    class Foo:
+        literal_field: Literal[1, True, "a", AnEnum.A]
+
+    FooDataframe = ObjectsBackingDataframe[Foo]
+
+    def test_with_mixed_type_values(self) -> None:
+        foo_df = self.FooDataframe([self.Foo(literal_field=1)])
+        foo_df.validate()
+        assert foo_df.dtypes["literal_field"] == np.dtype("O")
+        assert isinstance(foo_df.loc[0, "literal_field"], int)
+        assert foo_df.loc[0, "literal_field"] == 1
+        (foo_0,) = list(foo_df)
+        assert isinstance(foo_0.literal_field, int)
+        assert foo_0.literal_field == 1
+
+    def test_validating_literal_values(self) -> None:
+        foo_df = self.FooDataframe([self.Foo(literal_field="<invalid-value>")])
+        with pytest.raises(pa.errors.SchemaError):
+            foo_df.validate()
 
 
 def _check_foo_instance(foo_instance: type) -> None:
