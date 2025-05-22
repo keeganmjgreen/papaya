@@ -122,8 +122,6 @@ user_df.loc[0, "name"]  # `"Burn-E"`
 - Cascading deletes.
 - timedelta
 - ns/ms
-- list/List
-- Literal
 - Categorical
 - Filter
 - Converting tzs

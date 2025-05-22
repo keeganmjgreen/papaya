@@ -4,6 +4,7 @@ import types
 import typing
 from functools import partial
 from typing import Any, Iterator
+from typing_extensions import Literal
 
 import pandas as pd
 from pandera.engines.pandas_engine import DateTime
@@ -59,6 +60,15 @@ def dataframe_backed_object(cls):
                 )
         else:
             nullable = False
+
+        if isinstance(type_annotation, typing._LiteralGenericAlias):
+            literal_values = list(typing.get_args(type_annotation))
+            if None in literal_values:
+                nullable = True
+                literal_values.remove(None)
+            else:
+                nullable = False
+            type_annotation = Literal[*literal_values]
 
         if isinstance(type_annotation, typing._AnnotatedAlias):
             type_annotation, annotated_with = typing.get_args(type_annotation)

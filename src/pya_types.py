@@ -1,13 +1,14 @@
 import abc
 import dataclasses
 import datetime as dt
-from enum import Enum
+import typing
 import warnings
+from enum import Enum, EnumType
 from typing import Any, override
-from typing_extensions import Literal
 
 import pandas as pd
 import pandera as pa
+from typing_extensions import Literal
 
 from utils import get_exactly_one
 
@@ -64,7 +65,7 @@ class BooleanPyaType(GeneralPyaType):
             return pa.Column(pd.BooleanDtype(), nullable=True, **kwargs)
 
     @override
-    def prevalidate_column(self, df: pd.DataFrame):
+    def prevalidate_column(self, df: pd.DataFrame) -> None:
         if not self.nullable:
             return
         if self.config.store_nullable_bools_as_objects:
@@ -89,13 +90,13 @@ class DatePyaType(GeneralPyaType):
 @dataclasses.dataclass
 class EnumPyaType(GeneralPyaType):
     @property
-    def enum_member_values(self) -> set[Any]:
-        return {member.value for member in self.annotated_type.__members__.values()}
+    def enum_values(self) -> set[Any]:
+        return {member.value for member in self.annotated_type}
 
     @property
-    def enum_value_type(self) -> type:
+    def enum_values_type(self) -> type:
         try:
-            return get_exactly_one(set(type(x) for x in self.enum_member_values))
+            return get_exactly_one(set(type(x) for x in self.enum_values))
         except ValueError:
             warnings.warn(
                 f"The member values of enum `{self.annotated_type.__name__}` are not all of the "
@@ -107,19 +108,29 @@ class EnumPyaType(GeneralPyaType):
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
         if self.config.store_enum_members_as == "members":
-            return pa.Column(object, nullable=self.nullable, **kwargs)
+            isin = set(self.annotated_type)
+            return pa.Column(
+                object,
+                nullable=self.nullable,
+                checks=[pa.Check(lambda ser: ser.isin(isin))],
+            )
         elif self.config.store_enum_members_as == "names":
-            return pa.Column(str, nullable=self.nullable, **kwargs)
+            isin = set(member.name for member in self.annotated_type)
+            return pa.Column(
+                str,
+                nullable=self.nullable,
+                checks=[pa.Check(lambda ser: ser.isin(isin))],
+            )
         elif self.config.store_enum_members_as == "values":
             enum_value_pya_type = find_pya_type(
                 field_name=self.field_name,
-                annotated_type=self.enum_value_type,
-                annotated_with=None,
+                annotated_type=self.enum_values_type,
+                annotated_with=self.annotated_with,
                 nullable=self.nullable,
                 config=self.config,
             )
             return enum_value_pya_type.validator(
-                df, checks=[pa.Check(lambda ser: ser.isin(self.enum_member_values))]
+                df, checks=[pa.Check(lambda ser: ser.isin(self.enum_values))]
             )
 
     @override
@@ -131,12 +142,11 @@ class EnumPyaType(GeneralPyaType):
                 .astype(str)
             )
         elif self.config.store_enum_members_as == "values":
-            df[self.field_name] = (
-                df[self.field_name]
-                .apply(lambda x: x.value if isinstance(x, self.annotated_type) else x)
+            df[self.field_name] = df[self.field_name].apply(
+                lambda x: x.value if isinstance(x, self.annotated_type) else x
             )
             try:
-                df[self.field_name] = df[self.field_name].astype(self.enum_value_type)
+                df[self.field_name] = df[self.field_name].astype(self.enum_values_type)
             except TypeError:
                 pass
 
@@ -163,7 +173,7 @@ class IntegerPyaType(GeneralPyaType):
             return pa.Column(pd.Int64Dtype(), nullable=True, **kwargs)
 
     @override
-    def prevalidate_column(self, df: pd.DataFrame):
+    def prevalidate_column(self, df: pd.DataFrame) -> None:
         if not self.nullable:
             return
         if self.config.store_nullable_ints_as_floats:
@@ -178,9 +188,44 @@ class IntegerPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
+class LiteralPyaType(GeneralPyaType):
+    @property
+    def literal_values(self) -> set[Any]:
+        return {value for value in typing.get_args(self.annotated_type)}
+
+    @property
+    def literal_values_type(self) -> type:
+        try:
+            return get_exactly_one(set(type(x) for x in self.literal_values))
+        except ValueError:
+            return object
+
+    @override
+    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
+        self.prevalidate_column(df)
+        enum_value_pya_type = find_pya_type(
+            field_name=self.field_name,
+            annotated_type=self.literal_values_type,
+            annotated_with=self.annotated_with,
+            nullable=self.nullable,
+            config=self.config,
+        )
+        return enum_value_pya_type.validator(
+            df, checks=[pa.Check(lambda ser: ser.isin(self.literal_values))]
+        )
+
+    @override
+    def prevalidate_column(self, df: pd.DataFrame) -> None:
+        try:
+            df[self.field_name] = df[self.field_name].astype(self.literal_values_type)
+        except (TypeError, ValueError):
+            pass
+
+
+@dataclasses.dataclass
 class DatetimeyPyaType(GeneralPyaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs):
+    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
         return pa.Column(self.annotated_with, nullable=self.nullable, **kwargs)
 
@@ -188,7 +233,7 @@ class DatetimeyPyaType(GeneralPyaType):
 @dataclasses.dataclass
 class StringPyaType(GeneralPyaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs):
+    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
         return pa.Column(object, nullable=self.nullable, **kwargs)
 
@@ -205,10 +250,12 @@ def find_pya_type(
         return BooleanPyaType(*args)
     elif annotated_type is dt.date:
         return DatePyaType(*args)
-    elif issubclass(annotated_type, Enum):
+    elif isinstance(annotated_type, EnumType):
         return EnumPyaType(*args)
     elif annotated_type is int:
         return IntegerPyaType(*args)
+    elif isinstance(annotated_type, typing._LiteralGenericAlias):
+        return LiteralPyaType(*args)
     elif annotated_type is pd.Timestamp or annotated_type is dt.datetime:
         return DatetimeyPyaType(*args)
     elif annotated_type is str:
