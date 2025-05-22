@@ -133,3 +133,4 @@ user_df.loc[0, "name"]  # `"Burn-E"`
 - properties for indexing
 - @dataframe_backed_object includes @dataclass?
 - check if dataclass in @dataframe_backed_object
+- subclass eg timestamp

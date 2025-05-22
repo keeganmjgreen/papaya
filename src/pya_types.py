@@ -3,7 +3,7 @@ import dataclasses
 import datetime as dt
 import typing
 import warnings
-from enum import Enum, EnumType
+from enum import EnumType
 from typing import Any, override
 
 import pandas as pd
@@ -41,8 +41,8 @@ class GeneralPyaType(abc.ABC):
     def process_getter_value(self, value: Any) -> Any:
         if not hasattr(value, "__len__") and pd.isna(value):
             return None
-        elif type(self.annotated_type) is type and not isinstance(
-            value, self.annotated_type
+        elif (
+            type(self.annotated_type) is type and type(value) is not self.annotated_type
         ):
             return self.annotated_type(value)
         else:
@@ -228,6 +228,15 @@ class DatetimeyPyaType(GeneralPyaType):
     def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
         return pa.Column(self.annotated_with, nullable=self.nullable, **kwargs)
+
+    @override
+    def process_getter_value(self, value: pd.Timestamp) -> pd.Timestamp | dt.datetime | None:
+        if value is pd.NaT:
+            return None
+        elif issubclass(self.annotated_type, pd.Timestamp):
+            return value
+        else:
+            return value.to_pydatetime()
 
 
 @dataclasses.dataclass

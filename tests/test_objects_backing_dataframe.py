@@ -282,10 +282,10 @@ class TestCompatibilityWithEnums:
         foo_df.store_enum_members_as = "members"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
-        assert isinstance(foo_df.loc[0, "enum_field"], AnEnum)
+        assert type(foo_df.loc[0, "enum_field"]) is AnEnum
         assert foo_df.loc[0, "enum_field"] is AnEnum.A
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.enum_field, AnEnum)
+        assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
@@ -297,10 +297,10 @@ class TestCompatibilityWithEnums:
         foo_df.store_enum_members_as = "names"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
-        assert isinstance(foo_df.loc[0, "enum_field"], str)
+        assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "A"
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.enum_field, AnEnum)
+        assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
@@ -312,10 +312,10 @@ class TestCompatibilityWithEnums:
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("int64")
-        assert isinstance(foo_df.loc[0, "enum_field"], np.int64)
+        assert type(foo_df.loc[0, "enum_field"]) is np.int64
         assert foo_df.loc[0, "enum_field"] == 1
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.enum_field, AnEnum)
+        assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
@@ -338,10 +338,10 @@ class TestCompatibilityWithEnums:
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
-        assert isinstance(foo_df.loc[0, "enum_field"], str)
+        assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "a"
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.enum_field, AnEnum)
+        assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
@@ -364,10 +364,10 @@ class TestCompatibilityWithEnums:
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
-        assert isinstance(foo_df.loc[0, "enum_field"], ZoneInfo)
+        assert type(foo_df.loc[0, "enum_field"]) is ZoneInfo
         assert foo_df.loc[0, "enum_field"] == ZoneInfo("America/Toronto")
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.enum_field, AnEnum)
+        assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
 
@@ -383,10 +383,10 @@ class TestCompatibilityWithLiterals:
         foo_df = self.FooDataframe([self.Foo(literal_field=1)])
         foo_df.validate()
         assert foo_df.dtypes["literal_field"] == np.dtype("O")
-        assert isinstance(foo_df.loc[0, "literal_field"], int)
+        assert type(foo_df.loc[0, "literal_field"]) is int
         assert foo_df.loc[0, "literal_field"] == 1
         (foo_0,) = list(foo_df)
-        assert isinstance(foo_0.literal_field, int)
+        assert type(foo_0.literal_field) is int
         assert foo_0.literal_field == 1
 
     def test_validating_literal_values(self) -> None:
@@ -396,42 +396,42 @@ class TestCompatibilityWithLiterals:
 
 
 def _check_foo_instance(foo_instance: type) -> None:
-    assert isinstance(foo_instance.bool_field, bool)
+    assert type(foo_instance.bool_field) is bool
     assert foo_instance.bool_field is True
-    assert isinstance(foo_instance.date_field, dt.date)
+    assert type(foo_instance.date_field) is dt.date
     assert foo_instance.date_field == dt.date(2000, 4, 2)
-    assert isinstance(foo_instance.enum_field, AnEnum)
+    assert type(foo_instance.enum_field) is AnEnum
     assert foo_instance.enum_field is AnEnum.A
-    assert isinstance(foo_instance.float_field, float)
+    assert type(foo_instance.float_field) is float
     assert foo_instance.float_field == 4.2
-    assert isinstance(foo_instance.int_field, int)
+    assert type(foo_instance.int_field) is int
     assert foo_instance.int_field == 42
-    assert isinstance(foo_instance.list_field, list)
+    assert type(foo_instance.list_field) is list
     assert foo_instance.list_field == [4, 2]
-    assert isinstance(foo_instance.pandas_timestamp_w_tzinfo_field, pd.Timestamp)
+    assert type(foo_instance.pandas_timestamp_w_tzinfo_field) is pd.Timestamp
     assert foo_instance.pandas_timestamp_w_tzinfo_field == pd.Timestamp(
         "2000-04-02 23:59", tz="America/Toronto"
     )
-    assert isinstance(foo_instance.pandas_timestamp_wo_tzinfo_field, pd.Timestamp)
+    assert type(foo_instance.pandas_timestamp_wo_tzinfo_field) is pd.Timestamp
     assert foo_instance.pandas_timestamp_wo_tzinfo_field == pd.Timestamp(
         "2000-04-02 23:59"
     )
-    assert isinstance(foo_instance.pydatetime_w_tzinfo_field, dt.datetime)
+    assert type(foo_instance.pydatetime_w_tzinfo_field) is dt.datetime
     assert foo_instance.pydatetime_w_tzinfo_field == dt.datetime(
         2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
     )
-    assert isinstance(foo_instance.pydatetime_wo_tzinfo_field, dt.datetime)
+    assert type(foo_instance.pydatetime_wo_tzinfo_field) is dt.datetime
     assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(2000, 4, 2)
-    assert isinstance(foo_instance.str_field, str)
+    assert type(foo_instance.str_field) is str
     assert foo_instance.str_field == "bar"
-    assert isinstance(foo_instance.time_w_tzinfo_field, dt.time)
+    assert type(foo_instance.time_w_tzinfo_field) is dt.time
     assert foo_instance.time_w_tzinfo_field == dt.time(
         23, 59, tzinfo=ZoneInfo("America/Toronto")
     )
-    assert isinstance(foo_instance.time_wo_tzinfo_field, dt.time)
+    assert type(foo_instance.time_wo_tzinfo_field) is dt.time
     assert foo_instance.time_wo_tzinfo_field == dt.time(23, 59)
-    assert isinstance(foo_instance.uuid_field, UUID)
-    assert isinstance(foo_instance.zone_info_field, ZoneInfo)
+    assert type(foo_instance.uuid_field) is UUID
+    assert type(foo_instance.zone_info_field) is ZoneInfo
     assert foo_instance.zone_info_field == ZoneInfo("America/Toronto")
 
 
