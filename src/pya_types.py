@@ -223,6 +223,17 @@ class LiteralPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
+class TimedeltaPyaType(GeneralPyaType):
+    @override
+    def process_getter_value(self, value: pd.Timedelta) -> pd.Timedelta | dt.timedelta | None:
+        if value is pd.NaT:
+            return None
+        elif issubclass(self.annotated_type, pd.Timedelta):
+            return value
+        else:
+            return value.to_pytimedelta()
+
+@dataclasses.dataclass
 class DatetimeyPyaType(GeneralPyaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
@@ -265,6 +276,8 @@ def find_pya_type(
         return IntegerPyaType(*args)
     elif isinstance(annotated_type, typing._LiteralGenericAlias):
         return LiteralPyaType(*args)
+    elif annotated_type is pd.Timedelta or annotated_type is dt.timedelta:
+        return TimedeltaPyaType(*args)
     elif annotated_type is pd.Timestamp or annotated_type is dt.datetime:
         return DatetimeyPyaType(*args)
     elif annotated_type is str:

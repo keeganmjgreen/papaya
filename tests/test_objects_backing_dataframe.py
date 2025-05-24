@@ -79,6 +79,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         int_field: int
         list_field: list[int]
         literal_field: Literal[1, 2, 3]
+        pandas_timedelta_field: pd.Timedelta
         pandas_timestamp_w_tzinfo_field: Annotated[
             pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))
         ]
@@ -87,6 +88,7 @@ class TestCompatibilityWithNonNullableDataTypes:
             dt.datetime, DateTime(tz=ZoneInfo("America/Toronto"))
         ]
         pydatetime_wo_tzinfo_field: Annotated[dt.datetime, DateTime(tz=None)]
+        pytimedelta_field: dt.timedelta
         str_field: str
         time_w_tzinfo_field: dt.time
         time_wo_tzinfo_field: dt.time
@@ -101,6 +103,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         int_field=42,
         list_field=[4, 2],
         literal_field=1,
+        pandas_timedelta_field=pd.Timedelta(days=4, hours=2),
         pandas_timestamp_w_tzinfo_field=pd.Timestamp(
             "2000-04-02 23:59", tz="America/Toronto"
         ),
@@ -109,6 +112,7 @@ class TestCompatibilityWithNonNullableDataTypes:
             2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
         ),
         pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),
+        pytimedelta_field=dt.timedelta(days=4, hours=2),
         str_field="bar",
         time_w_tzinfo_field=dt.time(23, 59, tzinfo=ZoneInfo("America/Toronto")),
         time_wo_tzinfo_field=dt.time(23, 59),
@@ -131,7 +135,7 @@ class TestCompatibilityWithNonNullableDataTypes:
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
         df.validate()
-        assert len(df.dtypes) == 16
+        assert len(df.dtypes) == 18
         assert df.dtypes["bool_field"] == np.dtype("bool")
         assert df.dtypes["date_field"] == np.dtype("O")
         assert df.dtypes["enum_field"] == np.dtype("O")
@@ -139,6 +143,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         assert df.dtypes["int_field"] == np.dtype("int64")
         assert df.dtypes["list_field"] == np.dtype("O")
         assert df.dtypes["literal_field"] == np.dtype("int64")
+        assert df.dtypes["pandas_timedelta_field"] == np.dtype("<m8[ns]")
         assert df.dtypes["pandas_timestamp_w_tzinfo_field"] == pd.DatetimeTZDtype(
             tz=ZoneInfo("America/Toronto")
         )
@@ -147,6 +152,7 @@ class TestCompatibilityWithNonNullableDataTypes:
             tz=ZoneInfo("America/Toronto")
         )
         assert df.dtypes["pydatetime_wo_tzinfo_field"] == np.dtype("<M8[ns]")
+        assert df.dtypes["pytimedelta_field"] == np.dtype("<m8[ns]")
         assert df.dtypes["str_field"] == np.dtype("O")
         assert df.dtypes["time_w_tzinfo_field"] == np.dtype("O")
         assert df.dtypes["time_wo_tzinfo_field"] == np.dtype("O")
@@ -165,6 +171,7 @@ class TestCompatibilityWithNullableDataTypes:
         int_field: int | None = None
         list_field: list[int] | None = None
         literal_field: Literal[1, 2, 3, None] = None
+        pandas_timedelta_field: pd.Timedelta | None = None
         pandas_timestamp_w_tzinfo_field: (
             Annotated[pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))] | None
         ) = None
@@ -177,6 +184,7 @@ class TestCompatibilityWithNullableDataTypes:
         pydatetime_wo_tzinfo_field: Annotated[dt.datetime, DateTime(tz=None)] | None = (
             None
         )
+        pytimedelta_field: dt.timedelta | None = None
         str_field: str | None = None
         time_w_tzinfo_field: dt.time | None = None
         time_wo_tzinfo_field: dt.time | None = None
@@ -191,6 +199,7 @@ class TestCompatibilityWithNullableDataTypes:
         int_field=42,
         list_field=[4, 2],
         literal_field=1,
+        pandas_timedelta_field=pd.Timedelta(days=4, hours=2),
         pandas_timestamp_w_tzinfo_field=pd.Timestamp(
             "2000-04-02 23:59", tz="America/Toronto"
         ),
@@ -199,6 +208,7 @@ class TestCompatibilityWithNullableDataTypes:
             2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
         ),
         pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),
+        pytimedelta_field=dt.timedelta(days=4, hours=2),
         str_field="bar",
         time_w_tzinfo_field=dt.time(23, 59, tzinfo=ZoneInfo("America/Toronto")),
         time_wo_tzinfo_field=dt.time(23, 59),
@@ -245,13 +255,14 @@ class TestCompatibilityWithNullableDataTypes:
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
         df.validate()
-        assert len(df.dtypes) == 16
+        assert len(df.dtypes) == 18
         assert df.dtypes["bool_field"] == pd.BooleanDtype()
         assert df.dtypes["date_field"] == np.dtype("O")
         assert df.dtypes["float_field"] == np.dtype("float64")
         assert df.dtypes["int_field"] == pd.Int64Dtype()
         assert df.dtypes["list_field"] == np.dtype("O")
         assert df.dtypes["literal_field"] == pd.Int64Dtype()
+        assert df.dtypes["pandas_timedelta_field"] == np.dtype("<m8[ns]")
         assert df.dtypes["pandas_timestamp_w_tzinfo_field"] == pd.DatetimeTZDtype(
             tz=ZoneInfo("America/Toronto")
         )
@@ -260,6 +271,7 @@ class TestCompatibilityWithNullableDataTypes:
             tz=ZoneInfo("America/Toronto")
         )
         assert df.dtypes["pydatetime_wo_tzinfo_field"] == np.dtype("<M8[ns]")
+        assert df.dtypes["pytimedelta_field"] == np.dtype("<m8[ns]")
         assert df.dtypes["str_field"] == np.dtype("O")
         assert df.dtypes["time_w_tzinfo_field"] == np.dtype("O")
         assert df.dtypes["time_wo_tzinfo_field"] == np.dtype("O")
@@ -408,6 +420,8 @@ def _check_foo_instance(foo_instance: type) -> None:
     assert foo_instance.int_field == 42
     assert type(foo_instance.list_field) is list
     assert foo_instance.list_field == [4, 2]
+    assert type(foo_instance.pandas_timedelta_field) is pd.Timedelta
+    assert foo_instance.pandas_timedelta_field == pd.Timedelta(days=4, hours=2)
     assert type(foo_instance.pandas_timestamp_w_tzinfo_field) is pd.Timestamp
     assert foo_instance.pandas_timestamp_w_tzinfo_field == pd.Timestamp(
         "2000-04-02 23:59", tz="America/Toronto"
@@ -422,6 +436,8 @@ def _check_foo_instance(foo_instance: type) -> None:
     )
     assert type(foo_instance.pydatetime_wo_tzinfo_field) is dt.datetime
     assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(2000, 4, 2)
+    assert type(foo_instance.pytimedelta_field) is dt.timedelta
+    assert foo_instance.pytimedelta_field == dt.timedelta(days=4, hours=2)
     assert type(foo_instance.str_field) is str
     assert foo_instance.str_field == "bar"
     assert type(foo_instance.time_w_tzinfo_field) is dt.time

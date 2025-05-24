@@ -120,7 +120,6 @@ user_df.loc[0, "name"]  # `"Burn-E"`
 - Conversion.
 - Indexes.
 - Cascading deletes.
-- timedelta
 - ns/ms
 - Categorical
 - Filter
