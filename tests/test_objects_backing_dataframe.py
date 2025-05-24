@@ -279,6 +279,28 @@ class TestCompatibilityWithNullableDataTypes:
         assert df.dtypes["zone_info_field"] == np.dtype("O")
 
 
+def test_storing_dates_as_timestamps():
+    @dataframe_backed_object
+    @dataclasses.dataclass
+    class Foo:
+        date_field: dt.date
+
+    FooDataframe = ObjectsBackingDataframe[Foo]
+    foo_df = FooDataframe([Foo(date_field=dt.date(2000, 4, 2))])
+    foo_df.store_dates_as_timestamps = True
+    foo_df.validate()
+    assert foo_df.dtypes["date_field"] == np.dtype("<M8[ns]")
+    assert type(foo_df.loc[0, "date_field"]) is pd.Timestamp
+    assert foo_df.loc[0, "date_field"] == pd.Timestamp("2000-04-02")
+    (foo_0,) = list(foo_df)
+    assert type(foo_0.date_field) is dt.date
+    assert foo_0.date_field == dt.date(2000, 4, 2)
+
+    foo_df.loc[0, "date_field"] = pd.Timestamp("2000-04-02", tz="America/Toronto")
+    with pytest.raises(pa.errors.SchemaError):
+        foo_df.validate()
+
+
 class TestCompatibilityWithEnums:
     @dataframe_backed_object
     @dataclasses.dataclass
