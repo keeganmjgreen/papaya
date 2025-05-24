@@ -8,6 +8,7 @@ from typing import Any, override
 
 import pandas as pd
 import pandera as pa
+from pandera.engines.pandas_engine import DateTime
 from typing_extensions import Literal
 
 from utils import get_exactly_one
@@ -16,6 +17,7 @@ from utils import get_exactly_one
 @dataclasses.dataclass
 class PyaTypesConfig:
     store_nullable_bools_as_objects: bool = False
+    store_dates_as_timestamps: bool = False
     store_enum_members_as: Literal["members", "names", "values"] = "members"
     store_nullable_ints_as_floats: bool = False
 
@@ -84,7 +86,25 @@ class DatePyaType(GeneralPyaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
-        return pa.Column(object, nullable=self.nullable, **kwargs)
+        if self.config.store_dates_as_timestamps:
+            return pa.Column(DateTime(tz=None), nullable=self.nullable, **kwargs)
+        else:
+            return pa.Column(object, nullable=self.nullable, **kwargs)
+
+    @override
+    def prevalidate_column(self, df: pd.DataFrame) -> None:
+        if self.config.store_dates_as_timestamps:
+            df[self.field_name] = pd.to_datetime(df[self.field_name])
+
+    @override
+    def process_getter_value(self, value: dt.date | None | pd.Timestamp) -> dt.date | None:
+        if self.config.store_dates_as_timestamps:
+            if value is pd.NaT:
+                return None
+            else:
+                return value.date()
+        else:
+            return value
 
 
 @dataclasses.dataclass

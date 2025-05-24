@@ -61,6 +61,7 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
             store_nullable_bools_as_objects=getattr(
                 self, "store_nullable_bools_as_objects", False
             ),
+            store_dates_as_timestamps=getattr(self, "store_dates_as_timestamps", False),
             store_enum_members_as=getattr(self, "store_enum_members_as", "members"),
             store_nullable_ints_as_floats=getattr(
                 self, "store_nullable_ints_as_floats", False
