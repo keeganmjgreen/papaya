@@ -1,0 +1,44 @@
+site_name: Papaya
+nav:
+  - Home: index.md
+  - Motivation: motivation.md
+  - Usage: usage.md
+  - Supported Data Types: supported_data_types.md
+  - Use cases: use_cases.md
+theme:
+  features:
+    - content.code.annotate
+    - content.code.copy
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+markdown_extensions:
+  - admonition
+  - attr_list
+  - footnotes
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - smarty
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_toc_entry: false
+            members: true
+            members_order: source
+use_directory_urls: false
