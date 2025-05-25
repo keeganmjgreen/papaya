@@ -97,7 +97,9 @@ class DatePyaType(GeneralPyaType):
             df[self.field_name] = pd.to_datetime(df[self.field_name])
 
     @override
-    def process_getter_value(self, value: dt.date | None | pd.Timestamp) -> dt.date | None:
+    def process_getter_value(
+        self, value: dt.date | None | pd.Timestamp
+    ) -> dt.date | None:
         if self.config.store_dates_as_timestamps:
             if value is pd.NaT:
                 return None
@@ -241,17 +243,33 @@ class LiteralPyaType(GeneralPyaType):
         except (TypeError, ValueError):
             pass
 
+    @override
+    def process_getter_value(self, value: Any) -> Any:
+        if not hasattr(value, "__len__") and pd.isna(value):
+            return None
+        elif (
+            type(self.literal_values_type) is type
+            and type(value) is not self.literal_values_type
+            and self.literal_values_type is not object
+        ):
+            return self.literal_values_type(value)
+        else:
+            return value
+
 
 @dataclasses.dataclass
 class TimedeltaPyaType(GeneralPyaType):
     @override
-    def process_getter_value(self, value: pd.Timedelta) -> pd.Timedelta | dt.timedelta | None:
+    def process_getter_value(
+        self, value: pd.Timedelta
+    ) -> pd.Timedelta | dt.timedelta | None:
         if value is pd.NaT:
             return None
         elif issubclass(self.annotated_type, pd.Timedelta):
             return value
         else:
             return value.to_pytimedelta()
+
 
 @dataclasses.dataclass
 class DatetimeyPyaType(GeneralPyaType):
@@ -261,7 +279,9 @@ class DatetimeyPyaType(GeneralPyaType):
         return pa.Column(self.annotated_with, nullable=self.nullable, **kwargs)
 
     @override
-    def process_getter_value(self, value: pd.Timestamp) -> pd.Timestamp | dt.datetime | None:
+    def process_getter_value(
+        self, value: pd.Timestamp
+    ) -> pd.Timestamp | dt.datetime | None:
         if value is pd.NaT:
             return None
         elif issubclass(self.annotated_type, pd.Timestamp):

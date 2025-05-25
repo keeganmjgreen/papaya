@@ -130,7 +130,13 @@ class TestCompatibilityWithNonNullableDataTypes:
         )
         self._check_dtypes(foo_df)
         (foo_0,) = list(foo_df)
-        _check_foo_instance(foo_0)
+        _check_foo_types(foo_0)
+
+        foo_0 = _change_foo_values(foo_0)
+        self._check_dtypes(foo_df)
+        (foo_0,) = list(foo_df)
+        _check_foo_types(foo_0)
+        _check_changed_foo_values(foo_0)
 
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
@@ -226,7 +232,13 @@ class TestCompatibilityWithNullableDataTypes:
         )
         self._check_dtypes(foo_df)
         (foo_0,) = list(foo_df)
-        _check_foo_instance(foo_0)
+        _check_foo_types(foo_0)
+
+        foo_0 = _change_foo_values(foo_0)
+        self._check_dtypes(foo_df)
+        (foo_0,) = list(foo_df)
+        _check_foo_types(foo_0)
+        _check_changed_foo_values(foo_0)
 
     def test_with_some_nulls(self) -> None:
         foo_df = self.FooDataframe(
@@ -237,9 +249,15 @@ class TestCompatibilityWithNullableDataTypes:
         )
         self._check_dtypes(foo_df)
         foo_0, foo_1 = list(foo_df)
-        _check_foo_instance(foo_0)
+        _check_foo_types(foo_0)
         for field in dataclasses.fields(self.Foo):
             assert getattr(foo_1, field.name) is None
+
+        foo_0 = _change_foo_values(foo_0)
+        self._check_dtypes(foo_df)
+        foo_0, foo_1 = list(foo_df)
+        _check_foo_types(foo_0)
+        _check_changed_foo_values(foo_0)
 
     def test_with_all_nulls(self) -> None:
         foo_df = self.FooDataframe(
@@ -251,6 +269,12 @@ class TestCompatibilityWithNullableDataTypes:
         (foo_0,) = list(foo_df)
         for field in dataclasses.fields(self.Foo):
             assert getattr(foo_0, field.name) is None
+
+        foo_0 = _change_foo_values(foo_0)
+        self._check_dtypes(foo_df)
+        (foo_0,) = list(foo_df)
+        _check_foo_types(foo_0)
+        _check_changed_foo_values(foo_0)
 
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
@@ -429,48 +453,80 @@ class TestCompatibilityWithLiterals:
             foo_df.validate()
 
 
-def _check_foo_instance(foo_instance: type) -> None:
+def _check_foo_types(foo_instance: type) -> None:
     assert type(foo_instance.bool_field) is bool
-    assert foo_instance.bool_field is True
     assert type(foo_instance.date_field) is dt.date
-    assert foo_instance.date_field == dt.date(2000, 4, 2)
     assert type(foo_instance.enum_field) is AnEnum
-    assert foo_instance.enum_field is AnEnum.A
     assert type(foo_instance.float_field) is float
-    assert foo_instance.float_field == 4.2
     assert type(foo_instance.int_field) is int
-    assert foo_instance.int_field == 42
     assert type(foo_instance.list_field) is list
-    assert foo_instance.list_field == [4, 2]
+    assert type(foo_instance.literal_field) is int
     assert type(foo_instance.pandas_timedelta_field) is pd.Timedelta
-    assert foo_instance.pandas_timedelta_field == pd.Timedelta(days=4, hours=2)
     assert type(foo_instance.pandas_timestamp_w_tzinfo_field) is pd.Timestamp
-    assert foo_instance.pandas_timestamp_w_tzinfo_field == pd.Timestamp(
-        "2000-04-02 23:59", tz="America/Toronto"
-    )
     assert type(foo_instance.pandas_timestamp_wo_tzinfo_field) is pd.Timestamp
-    assert foo_instance.pandas_timestamp_wo_tzinfo_field == pd.Timestamp(
-        "2000-04-02 23:59"
-    )
     assert type(foo_instance.pydatetime_w_tzinfo_field) is dt.datetime
-    assert foo_instance.pydatetime_w_tzinfo_field == dt.datetime(
-        2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
-    )
     assert type(foo_instance.pydatetime_wo_tzinfo_field) is dt.datetime
-    assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(2000, 4, 2)
     assert type(foo_instance.pytimedelta_field) is dt.timedelta
-    assert foo_instance.pytimedelta_field == dt.timedelta(days=4, hours=2)
     assert type(foo_instance.str_field) is str
-    assert foo_instance.str_field == "bar"
     assert type(foo_instance.time_w_tzinfo_field) is dt.time
-    assert foo_instance.time_w_tzinfo_field == dt.time(
-        23, 59, tzinfo=ZoneInfo("America/Toronto")
-    )
     assert type(foo_instance.time_wo_tzinfo_field) is dt.time
-    assert foo_instance.time_wo_tzinfo_field == dt.time(23, 59)
     assert type(foo_instance.uuid_field) is UUID
     assert type(foo_instance.zone_info_field) is ZoneInfo
-    assert foo_instance.zone_info_field == ZoneInfo("America/Toronto")
+
+
+def _change_foo_values(foo_instance: type) -> type:
+    foo_instance.bool_field = False
+    foo_instance.date_field = dt.date(2000, 7, 3)
+    foo_instance.enum_field = AnEnum.B
+    foo_instance.float_field = 7.3
+    foo_instance.int_field = 73
+    foo_instance.list_field = [7, 3]
+    foo_instance.literal_field = 2
+    foo_instance.pandas_timedelta_field = pd.Timedelta(days=7, hours=3)
+    foo_instance.pandas_timestamp_w_tzinfo_field = pd.Timestamp(
+        "2000-07-03 00:00", tz="America/Toronto"
+    )
+    foo_instance.pandas_timestamp_wo_tzinfo_field = pd.Timestamp("2000-07-03 00:00")
+    foo_instance.pydatetime_w_tzinfo_field = dt.datetime(
+        2000, 7, 3, 0, 0, tzinfo=ZoneInfo("America/Toronto")
+    )
+    foo_instance.pydatetime_wo_tzinfo_field = dt.datetime(2000, 7, 3)
+    foo_instance.pytimedelta_field = dt.timedelta(days=7, hours=3)
+    foo_instance.str_field = "baz"
+    foo_instance.time_w_tzinfo_field = dt.time(0, 0, tzinfo=ZoneInfo("America/Toronto"))
+    foo_instance.time_wo_tzinfo_field = dt.time(0, 0)
+    foo_instance.uuid_field = uuid4()
+    foo_instance.zone_info_field = ZoneInfo("Asia/Kolkata")
+
+    return foo_instance
+
+
+def _check_changed_foo_values(foo_instance: type) -> None:
+    assert foo_instance.bool_field is False
+    assert foo_instance.date_field == dt.date(2000, 7, 3)
+    assert foo_instance.enum_field is AnEnum.B
+    assert foo_instance.float_field == 7.3
+    assert foo_instance.int_field == 73
+    assert foo_instance.list_field == [7, 3]
+    assert foo_instance.literal_field == 2
+    assert foo_instance.pandas_timedelta_field == pd.Timedelta(days=7, hours=3)
+    assert foo_instance.pandas_timestamp_w_tzinfo_field == pd.Timestamp(
+        "2000-07-03 00:00", tz="America/Toronto"
+    )
+    assert foo_instance.pandas_timestamp_wo_tzinfo_field == pd.Timestamp(
+        "2000-07-03 00:00"
+    )
+    assert foo_instance.pydatetime_w_tzinfo_field == dt.datetime(
+        2000, 7, 3, 0, 0, tzinfo=ZoneInfo("America/Toronto")
+    )
+    assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(2000, 7, 3)
+    assert foo_instance.pytimedelta_field == dt.timedelta(days=7, hours=3)
+    assert foo_instance.str_field == "baz"
+    assert foo_instance.time_w_tzinfo_field == dt.time(
+        0, 0, tzinfo=ZoneInfo("America/Toronto")
+    )
+    assert foo_instance.time_wo_tzinfo_field == dt.time(0, 0)
+    assert foo_instance.zone_info_field == ZoneInfo("Asia/Kolkata")
 
 
 def test_raising_for_prohibited_datetimey_type_annotations() -> None:

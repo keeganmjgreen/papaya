@@ -117,7 +117,7 @@ def dataframe_backed_object(cls):
 
     def fset(self, value: Any, field_name: str) -> None:
         if self.__df is not None and self.__df_key is not None:
-            self.__df.loc[self.__df_key, field_name] = value
+            self.__df.at[self.__df_key, field_name] = value
         else:
             setattr(self, f"__{field_name}", value)
 
