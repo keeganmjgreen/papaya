@@ -117,7 +117,14 @@ def dataframe_backed_object(cls):
 
     def fset(self, value: Any, field_name: str) -> None:
         if self.__df is not None and self.__df_key is not None:
-            self.__df.at[self.__df_key, field_name] = value
+            fields = {f.name: f for f in dataclasses.fields(self)}
+            field = fields[field_name]
+            pya_type = find_pya_type(
+                field_name,
+                *type(self)._process_type_annotation(field.type),
+                config=self.__df.pya_types_config,
+            )
+            self.__df.at[self.__df_key, field_name] = pya_type.process_setter_value(value)
         else:
             setattr(self, f"__{field_name}", value)
 
