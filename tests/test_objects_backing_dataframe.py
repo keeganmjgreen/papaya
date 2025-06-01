@@ -346,6 +346,10 @@ class TestCompatibilityWithEnums:
         assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
+        foo_0.enum_field = AnEnum.B
+        (foo_0,) = list(foo_df)
+        assert foo_0.enum_field is AnEnum.B
+
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
@@ -361,6 +365,10 @@ class TestCompatibilityWithEnums:
         assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
+        foo_0.enum_field = AnEnum.B
+        (foo_0,) = list(foo_df)
+        assert foo_0.enum_field is AnEnum.B
+
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
@@ -375,6 +383,10 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
+
+        foo_0.enum_field = AnEnum.B
+        (foo_0,) = list(foo_df)
+        assert foo_0.enum_field is AnEnum.B
 
         foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):

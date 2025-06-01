@@ -51,6 +51,11 @@ class GeneralPyaType(abc.ABC):
             return value
 
     def process_setter_value(self, value: Any) -> Any:
+        if type(self.annotated_type) is type and type(value) is not self.annotated_type:
+            if not self.nullable:
+                raise TypeError(f"{value} must be {self.annotated_type}.")
+            elif value is not None:
+                raise TypeError(f"{value} must be {self.annotated_type} or None.")
         return value
 
 
@@ -112,8 +117,14 @@ class DatePyaType(GeneralPyaType):
 @dataclasses.dataclass
 class EnumPyaType(GeneralPyaType):
     @property
+    def enum_members(self) -> set[Any]:
+        return set(member for member in self.annotated_type)
+    @property
+    def enum_names(self) -> set[Any]:
+        return set(member.name for member in self.annotated_type)
+    @property
     def enum_values(self) -> set[Any]:
-        return {member.value for member in self.annotated_type}
+        return set(member.value for member in self.annotated_type)
 
     @property
     def enum_values_type(self) -> type:
@@ -130,18 +141,16 @@ class EnumPyaType(GeneralPyaType):
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
         if self.config.store_enum_members_as == "members":
-            isin = set(self.annotated_type)
             return pa.Column(
                 object,
                 nullable=self.nullable,
-                checks=[pa.Check(lambda ser: ser.isin(isin))],
+                checks=[pa.Check(lambda ser: ser.isin(self.enum_members))],
             )
         elif self.config.store_enum_members_as == "names":
-            isin = set(member.name for member in self.annotated_type)
             return pa.Column(
                 str,
                 nullable=self.nullable,
-                checks=[pa.Check(lambda ser: ser.isin(isin))],
+                checks=[pa.Check(lambda ser: ser.isin(self.enum_names))],
             )
         elif self.config.store_enum_members_as == "values":
             enum_value_pya_type = find_pya_type(
@@ -180,6 +189,20 @@ class EnumPyaType(GeneralPyaType):
             return self.annotated_type[value]
         elif self.config.store_enum_members_as == "values":
             return self.annotated_type(value)
+
+    def process_setter_value(self, value: Any) -> Any:
+        if value not in self.enum_members:
+            if not self.nullable:
+                raise ValueError(f"{value} must be in {self.annotated_type.__name__}.")
+            elif value is not None:
+                raise ValueError(f"{value} must be in {self.annotated_type.__name__} or None.")
+
+        if self.config.store_enum_members_as == "members":
+            return value
+        elif self.config.store_enum_members_as == "names":
+            return value.name
+        elif self.config.store_enum_members_as == "values":
+            return value.value
 
 
 @dataclasses.dataclass
@@ -255,6 +278,15 @@ class LiteralPyaType(GeneralPyaType):
             return self.literal_values_type(value)
         else:
             return value
+
+    def process_setter_value(self, value: Any) -> Any:
+        if value not in self.literal_values:
+            if not self.nullable:
+                raise ValueError(f"{value} must be in {self.literal_values}.")
+            elif value is not None:
+                raise ValueError(f"{value} must be in {self.literal_values} or None.")
+
+        return value
 
 
 @dataclasses.dataclass
