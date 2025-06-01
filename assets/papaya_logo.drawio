@@ -1,0 +1,16 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.16 Chrome/132.0.6834.196 Electron/34.2.0 Safari/537.36" version="26.0.16">
+  <diagram name="Page-1" id="HMEA5NjMWXU1LRbanbm2">
+    <mxGraphModel dx="1434" dy="903" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="L9rfSnO900uDvdXRjHnt-1" value="PAPAYA" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=72;fontStyle=1;spacing=0;spacingTop=-23;spacingLeft=-5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="270" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="L9rfSnO900uDvdXRjHnt-2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#159957;strokeColor=none;rotation=-45;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="309" y="45.5" width="60" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
