@@ -9,7 +9,7 @@ def test_dataframe_convertible() -> None:
         id: int
         name: str
 
-    UserDataFrame = DataFrameConvertible[User]
+    UserDataFrame = DataFrameConvertible[User]  # noqa: N806
 
     user_df = UserDataFrame(
         [

@@ -4,10 +4,10 @@ import types
 import typing
 from functools import partial
 from typing import Any, Iterator
-from typing_extensions import Literal
 
 import pandas as pd
 from pandera.engines.pandas_engine import DateTime
+from typing_extensions import Literal
 
 from objects_dataframe_base import ObjectsDataframeBase
 from pya_types import find_pya_type
@@ -15,6 +15,7 @@ from utils import get_exactly_one
 
 
 class ObjectsBackingDataframe[T](ObjectsDataframeBase):
+
     def __iter__(self) -> Iterator[T]:
         self.validate()
         for df_key, _ in super().iterrows():
@@ -29,17 +30,19 @@ def dataframe_backed_object(cls):
     cls.__df = None
     cls.__df_key = None
 
-    init = cls.__init__
+    original_constructor = cls.__init__
 
-    def __init__(self, *args, **kwargs):
+    def wrapped_constructor(self, *args, **kwargs):
         if kwargs.get("__df") is not None and kwargs.get("__df_key") is not None:
-            init(self, **{f.name: None for f in dataclasses.fields(cls)})
+            original_constructor(
+                self, **{f.name: None for f in dataclasses.fields(cls)}
+            )
             self.__df = kwargs["__df"]
             self.__df_key = kwargs["__df_key"]
         else:
-            init(self, *args, **kwargs)
+            original_constructor(self, *args, **kwargs)
 
-    cls.__init__ = __init__
+    cls.__init__ = wrapped_constructor
 
     def _process_type_annotation(type_annotation: type) -> tuple[type, type, bool]:
         if isinstance(type_annotation, types.UnionType) or isinstance(
@@ -56,8 +59,9 @@ def dataframe_backed_object(cls):
             except ValueError:
                 raise TypeError(
                     "Union types not supported unless being used as an alias for "
-                    "`Optional[<type>]`, i.e., `Union[<type>, None]` or `<type> | None`."
-                )
+                    "`Optional[<type>]`, i.e., `Union[<type>, None]` or "
+                    "`<type> | None`."
+                ) from None
         else:
             nullable = False
 
@@ -78,16 +82,16 @@ def dataframe_backed_object(cls):
         if type_annotation is pd.Timestamp or type_annotation is dt.datetime:
             if not isinstance(annotated_with, DateTime):
                 raise TypeError(
-                    "`pandas.Timestamp` or `datetime.datetime` alone are insufficient type "
-                    "annotations; they do not enforce time zones or even whether a "
-                    "timestamp/datetime is time-zone-aware. Instead, use:\n"
+                    "`pandas.Timestamp` or `datetime.datetime` alone are insufficient "
+                    "type annotations; they do not enforce time zones or even whether "
+                    "a timestamp/datetime is time-zone-aware. Instead, use:\n"
                     "```python\n"
                     "from typing import Annotated\n"
                     "from zoneinfo import ZoneInfo\n"
                     "\n"
                     "from pandera.engines.pandas_engine import DateTime\n"
                     "\n"
-                    f"Annotated[{type_annotation.__name__}, DateTime(tz=ZoneInfo(...))]\n"
+                    f"Annotated[{type_annotation.__name__}, DateTime(tz=ZoneInfo(...))]\n"  # noqa: E501
                     "```\n"
                     "Or, for time-zone-naiveness (not advisable), use:\n"
                     "```python\n"
@@ -124,7 +128,9 @@ def dataframe_backed_object(cls):
                 *type(self)._process_type_annotation(field.type),
                 config=self.__df.pya_types_config,
             )
-            self.__df.at[self.__df_key, field_name] = pya_type.process_setter_value(value)
+            self.__df.at[self.__df_key, field_name] = pya_type.process_setter_value(
+                value
+            )
         else:
             setattr(self, f"__{field_name}", value)
 

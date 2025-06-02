@@ -7,3 +7,10 @@ dependencies = ["pandas (>=2.2.3,<3.0.0)", "pandera (>=0.24.0,<0.25.0)", "pytest
 [tool.pytest.ini_options]
 pythonpath = "src/"
 testpaths = ["tests/"]
+
+[tool.ruff]
+src = ["src/"]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I", "N", "DTZ", "RUF", "PERF"]
