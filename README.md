@@ -1,12 +1,6 @@
-<style>
-  .md-typeset h1,
-  .md-content__button {
-    display: none;
-  }
-</style>
-
 <div align="center">
-    <img src="assets/papaya_logo_light.png" alt="PAPAYA" width=50% />
+    <img src="docs/assets/papaya_logo_light.png" alt="PAPAYA" width=50% />
+    <p><a href="https://keeganmjgreen.github.io/papaya/index.html"><b>Docs</b></a><p>
 </div>
 
 Papaya is a Python library providing precise and efficient interoperability between pandas dataframes and Python dataclasses, including data type validation.
