@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-import datetime as dt
-from enum import Enum
 import typing
 import warnings
 from typing import Any, Iterator, Optional, Type
@@ -18,6 +16,7 @@ from pya_types import PyaTypesConfig, find_pya_type
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
+
     @property
     def _dataframe_objects_class(self) -> typing.Type[T]:
         return typing.get_args(self.__orig_class__)[0]
@@ -37,8 +36,9 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
                     and dtype.tz != self[field_name].dtype.tz
                 ):
                     warnings.warn(
-                        f"Converting column {field_name} from `tz={self[field_name].dtype.tz}` to "
-                        f"`tz={dtype.tz}`."
+                        f"Converting column {field_name} from "
+                        f"`tz={self[field_name].dtype.tz}` to `tz={dtype.tz}`.",
+                        stacklevel=2,
                     )
                     self[field_name] = self[field_name].dt.tz_convert(dtype.tz)
         schema.validate(pd.DataFrame(self))

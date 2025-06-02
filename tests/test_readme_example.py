@@ -15,7 +15,7 @@ def test_readme_example() -> None:
     user_0 = User(user_id=0, name="Wall-E", account_balance=42.0, points_balance=None)
     assert user_0.user_id == 0
 
-    UserDataframe = ObjectsBackingDataframe[User]
+    UserDataframe = ObjectsBackingDataframe[User]  # noqa: N806
 
     user_df = UserDataframe(
         [(1, "Wall-E", 42.0, None)],
@@ -23,13 +23,15 @@ def test_readme_example() -> None:
     )
 
     user_df.validate()
-    user_df.dtypes
+    user_df.dtypes  # noqa: B018
 
     users = list(user_df)
 
     for user in user_df:
-        print(user)  # `User(user_id=0, name="Wall-E", account_balance=42.0, points_balance=None)`
-        print(user.name)  # `"Wall-E"`
+        print(user)
+        # `User(user_id=0, name="Wall-E", account_balance=42.0, points_balance=None)`
+        print(user.name)
+        # `"Wall-E"`
 
     users[0].name = "Burn-E"
     assert user_df.loc[0, "name"] == "Burn-E"
