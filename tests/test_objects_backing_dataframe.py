@@ -24,7 +24,7 @@ def test_dataframe_backed() -> None:
         id: int
         name: str
 
-    UserDataframe = ObjectsBackingDataframe[User]
+    UserDataframe = ObjectsBackingDataframe[User]  # noqa: N806
 
     user_df = UserDataframe(
         [
@@ -41,11 +41,12 @@ def test_dataframe_backed() -> None:
     user_2 = next(df_iterator)
     assert user_1 == User(id=1, name="a")
     assert user_2 == User(id=2, name="b")
-    # Values stored as, for example, `np.int64` in the backing dataframe are cast to `int` when
-    #     accessed as instance attributes:
+    # Values stored as, for example, `np.int64` in the backing dataframe are cast to
+    #     `int` when accessed as instance attributes:
     assert isinstance(user_1.id, int)
 
-    # Updating an attribute updates the corresponding value in the `UserDataFrame` instance:
+    # Updating an attribute updates the corresponding value in the `UserDataFrame`
+    #     instance:
     user_1.name = "c"
     assert user_df.loc[0, "name"] == "c"
 
@@ -54,8 +55,8 @@ def test_dataframe_backed() -> None:
     assert user_1.__df is user_2.__df
     assert user_1.__df is user_df
 
-    # Even if the variable `user_df` is deleted, the `UserDataFrame` instance is still in memory
-    #     and accessible by `User` instances:
+    # Even if the variable `user_df` is deleted, the `UserDataFrame` instance is still
+    #     in memory and accessible by `User` instances:
     del user_df
     assert user_1.name == "c"
     assert isinstance(user_1.__df, pd.DataFrame)
@@ -111,7 +112,7 @@ class TestCompatibilityWithNonNullableDataTypes:
         pydatetime_w_tzinfo_field=dt.datetime(
             2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
         ),
-        pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),
+        pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),  # noqa: DTZ001
         pytimedelta_field=dt.timedelta(days=4, hours=2),
         str_field="bar",
         time_w_tzinfo_field=dt.time(23, 59, tzinfo=ZoneInfo("America/Toronto")),
@@ -213,7 +214,7 @@ class TestCompatibilityWithNullableDataTypes:
         pydatetime_w_tzinfo_field=dt.datetime(
             2000, 4, 2, 23, 59, tzinfo=ZoneInfo("America/Toronto")
         ),
-        pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),
+        pydatetime_wo_tzinfo_field=dt.datetime(2000, 4, 2),  # noqa: DTZ001
         pytimedelta_field=dt.timedelta(days=4, hours=2),
         str_field="bar",
         time_w_tzinfo_field=dt.time(23, 59, tzinfo=ZoneInfo("America/Toronto")),
@@ -309,7 +310,7 @@ def test_storing_dates_as_timestamps():
     class Foo:
         date_field: dt.date
 
-    FooDataframe = ObjectsBackingDataframe[Foo]
+    FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
     foo_df = FooDataframe([Foo(date_field=dt.date(2000, 4, 2))])
     foo_df.store_dates_as_timestamps = True
     foo_df.validate()
@@ -403,7 +404,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
@@ -429,7 +430,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         foo_df.store_enum_members_as = "values"
         foo_df.validate()
@@ -502,7 +503,7 @@ def _change_foo_values(foo_instance: type) -> type:
     foo_instance.pydatetime_w_tzinfo_field = dt.datetime(
         2000, 7, 3, 0, 0, tzinfo=ZoneInfo("America/Toronto")
     )
-    foo_instance.pydatetime_wo_tzinfo_field = dt.datetime(2000, 7, 3)
+    foo_instance.pydatetime_wo_tzinfo_field = dt.datetime(2000, 7, 3)  # noqa: DTZ001
     foo_instance.pytimedelta_field = dt.timedelta(days=7, hours=3)
     foo_instance.str_field = "baz"
     foo_instance.time_w_tzinfo_field = dt.time(0, 0, tzinfo=ZoneInfo("America/Toronto"))
@@ -531,7 +532,9 @@ def _check_changed_foo_values(foo_instance: type) -> None:
     assert foo_instance.pydatetime_w_tzinfo_field == dt.datetime(
         2000, 7, 3, 0, 0, tzinfo=ZoneInfo("America/Toronto")
     )
-    assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(2000, 7, 3)
+    assert foo_instance.pydatetime_wo_tzinfo_field == dt.datetime(  # noqa: DTZ001
+        2000, 7, 3
+    )
     assert foo_instance.pytimedelta_field == dt.timedelta(days=7, hours=3)
     assert foo_instance.str_field == "baz"
     assert foo_instance.time_w_tzinfo_field == dt.time(
@@ -566,7 +569,7 @@ class TestCompatibilityWithOddTypeAnnotations:
             union_nullable_field_2: Union[str, None] = None
             optional_field: Optional[str] = None
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe(
             [
                 Foo(),  # All `None`s.
@@ -590,9 +593,10 @@ class TestCompatibilityWithOddTypeAnnotations:
         @dataclasses.dataclass
         class Foo:
             single_union_field: Union[int]
-            # ^ `Field.type` is actually just `int`, not `Union[int]`, so this is never an issue.
+            # ^ `Field.type` is actually just `int`, not `Union[int]`, so this is never
+            #     a problem.
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(single_union_field=1)])
         (foo_0,) = list(foo_df)
         assert foo_0.single_union_field == 1

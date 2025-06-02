@@ -82,7 +82,9 @@ class BooleanPyaType(GeneralPyaType):
             warnings.warn(
                 "Using Pandas' experimental `BooleanDtype` for nullable bool field. "
                 "To avoid this, set "
-                "`<ObjectsBackingDataframe instance>.store_nullable_bools_as_objects = True`."
+                "`<ObjectsBackingDataframe instance>.store_nullable_bools_as_objects "
+                "= True`.",
+                stacklevel=2,
             )
 
 
@@ -119,9 +121,11 @@ class EnumPyaType(GeneralPyaType):
     @property
     def enum_members(self) -> set[Any]:
         return set(member for member in self.annotated_type)
+
     @property
     def enum_names(self) -> set[Any]:
         return set(member.name for member in self.annotated_type)
+
     @property
     def enum_values(self) -> set[Any]:
         return set(member.value for member in self.annotated_type)
@@ -132,8 +136,9 @@ class EnumPyaType(GeneralPyaType):
             return get_exactly_one(set(type(x) for x in self.enum_values))
         except ValueError:
             warnings.warn(
-                f"The member values of enum `{self.annotated_type.__name__}` are not all of the "
-                "same type. Using `object`."
+                f"The member values of enum `{self.annotated_type.__name__}` are not "
+                "all of the same type. Using `object`.",
+                stacklevel=2,
             )
             return object
 
@@ -195,7 +200,9 @@ class EnumPyaType(GeneralPyaType):
             if not self.nullable:
                 raise ValueError(f"{value} must be in {self.annotated_type.__name__}.")
             elif value is not None:
-                raise ValueError(f"{value} must be in {self.annotated_type.__name__} or None.")
+                raise ValueError(
+                    f"{value} must be in {self.annotated_type.__name__} or None."
+                )
 
         if self.config.store_enum_members_as == "members":
             return value
@@ -228,7 +235,9 @@ class IntegerPyaType(GeneralPyaType):
             warnings.warn(
                 "Using Pandas' experimental `Int64Dtype` for nullable integer field. "
                 "To avoid this, set "
-                "`<ObjectsBackingDataframe instance>.store_nullable_ints_as_floats = True`."
+                "`<ObjectsBackingDataframe instance>.store_nullable_ints_as_floats "
+                "= True`.",
+                stacklevel=2,
             )
 
 
