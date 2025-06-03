@@ -77,7 +77,7 @@ def dataframe_backed_object(cls):
         if isinstance(type_annotation, typing._AnnotatedAlias):
             type_annotation, annotated_with = typing.get_args(type_annotation)
         else:
-            annotated_with = False
+            annotated_with = None
 
         if type_annotation is pd.Timestamp or type_annotation is dt.datetime:
             if not isinstance(annotated_with, DateTime):
