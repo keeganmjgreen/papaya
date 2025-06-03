@@ -4,7 +4,7 @@ import abc
 import dataclasses
 import typing
 import warnings
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Iterator, Literal, Optional, Type
 
 import pandas as pd
 import pandera.pandas as pa
@@ -16,10 +16,44 @@ from pya_types import PyaTypesConfig, find_pya_type
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
+    pya_types_config: PyaTypesConfig
 
-    @property
-    def _dataframe_objects_class(self) -> typing.Type[T]:
-        return typing.get_args(self.__orig_class__)[0]
+    def __init__(
+        self,
+        data=None,
+        index=None,
+        columns=None,
+        dtype=None,
+        copy=None,
+        store_nullable_bools_as_objects: bool = False,
+        store_dates_as_timestamps: bool = False,
+        store_enum_members_as: Literal["members", "names", "values"] = "members",
+        store_nullable_ints_as_floats: bool = False,
+    ) -> None:
+        super().__init__(data, index, columns, dtype, copy)
+
+        self.pya_types_config = PyaTypesConfig(
+            store_nullable_bools_as_objects,
+            store_dates_as_timestamps,
+            store_enum_members_as,
+            store_nullable_ints_as_floats,
+        )
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+
+        # We want to validate instances of `ObjectsDataframeBase` upon instantiation.
+        # The schema against which it is validated is determined by the dataclass held
+        # by TypeVar `T`. This is accessible through property
+        # `_dataframe_objects_class`, which uses attribute `__orig_class__`.
+        # `__orig_class__` is set by Python and is an implementation detail rather than
+        # a supported feature, but we still want to use it. However, since Python 3.7,
+        # it is set *after* on an instance after it is instantiated, meaning that it is
+        # unavailable for us to use to validate the DataFrame in `__init__`. As a
+        # workaround, detect when `__orig_class__` is set by Python and in that moment
+        # use it to validate the DataFrame. This is also what Pandera does.
+        if name == "__orig_class__":
+            self.validate()
 
     def validate(self) -> None:
         schema = self._get_dataframe_schema()
@@ -56,17 +90,8 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
         )
 
     @property
-    def pya_types_config(self) -> PyaTypesConfig:
-        return PyaTypesConfig(
-            store_nullable_bools_as_objects=getattr(
-                self, "store_nullable_bools_as_objects", False
-            ),
-            store_dates_as_timestamps=getattr(self, "store_dates_as_timestamps", False),
-            store_enum_members_as=getattr(self, "store_enum_members_as", "members"),
-            store_nullable_ints_as_floats=getattr(
-                self, "store_nullable_ints_as_floats", False
-            ),
-        )
+    def _dataframe_objects_class(self) -> typing.Type[T]:
+        return typing.get_args(self.__orig_class__)[0]
 
     @abc.abstractmethod
     def __iter__(self) -> Iterator[T]:

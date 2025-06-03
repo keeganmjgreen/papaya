@@ -22,7 +22,6 @@ def test_readme_example() -> None:
         columns=["user_id", "name", "account_balance", "points_balance"],
     )
 
-    user_df.validate()
     user_df.dtypes  # noqa: B018
 
     users = list(user_df)
