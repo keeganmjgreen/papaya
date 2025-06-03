@@ -37,15 +37,14 @@ Instantiate a `UserDataframe` any way that a `pandas.DataFrame` is normally inst
 
 ```python
 user_df = UserDataframe(
-    [(1, "Wall-E", 42.0, None)],
+    data=[(1, "Wall-E", 42.0, None)],
     columns=["user_id", "name", "account_balance", "points_balance"],
 )
 ```
 
-Call `user_df.validate()` to ensure that its pandas data types align with `User`'s type annotations and validate `user_df`'s existing data against them (uses the [Pandera](https://pandera.readthedocs.io/en/stable/) library):
+When such an `ObjectsBackingDataframe` is instantiated, it will self-validate using [Pandera](https://pandera.readthedocs.io/en/stable/), ensuring that its pandas data types align with the type annotations of its defining dataclass (in this case, `User`):
 
 ```python
-user_df.validate()
 user_df.dtypes
 # user_id              int64
 # name                object
@@ -53,7 +52,9 @@ user_df.dtypes
 # points_balance       Int64 (1)
 ```
 
-1.  `user_df.validate()` converts `points_balance` from `int64` to `Int64` to support null values, as `points_balance` can be `None`.
+1.  The `points_balance` column is stored using pandas' `Int64` data type, instead of `int64`, to support null values, as `points_balance` can be `None`.
+
+If the data types are incompatible with the dataclass's type annotations, the validation will fail and raise a Pandera `SchemaError`. An `ObjectsBackingDataframe` can be validated at any time by calling its `validate()` method.
 
 `user_df` can be used like a normal `pandas.DataFrame`, except `list(user_df)` returns a list of `User` instances (rather than returning the dataframe's column names), and iterating over `user_df` iterates over `User` instances (rather than iterating over the dataframe's column names):
 

@@ -141,7 +141,6 @@ class TestCompatibilityWithNonNullableDataTypes:
 
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
-        df.validate()
         assert len(df.dtypes) == 18
         assert df.dtypes["bool_field"] == np.dtype("bool")
         assert df.dtypes["date_field"] == np.dtype("O")
@@ -279,7 +278,6 @@ class TestCompatibilityWithNullableDataTypes:
 
     @staticmethod
     def _check_dtypes(df: ObjectsBackingDataframe) -> None:
-        df.validate()
         assert len(df.dtypes) == 18
         assert df.dtypes["bool_field"] == pd.BooleanDtype()
         assert df.dtypes["date_field"] == np.dtype("O")
@@ -311,9 +309,9 @@ def test_storing_dates_as_timestamps():
         date_field: dt.date
 
     FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-    foo_df = FooDataframe([Foo(date_field=dt.date(2000, 4, 2))])
-    foo_df.store_dates_as_timestamps = True
-    foo_df.validate()
+    foo_df = FooDataframe(
+        [Foo(date_field=dt.date(2000, 4, 2))], store_dates_as_timestamps=True
+    )
     assert foo_df.dtypes["date_field"] == np.dtype("<M8[ns]")
     assert type(foo_df.loc[0, "date_field"]) is pd.Timestamp
     assert foo_df.loc[0, "date_field"] == pd.Timestamp("2000-04-02")
@@ -337,9 +335,7 @@ class TestCompatibilityWithEnums:
     FooDataframe = ObjectsBackingDataframe[Foo]
 
     def test_storing_enum_members_as_members(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance])
-        foo_df.store_enum_members_as = "members"
-        foo_df.validate()
+        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="members")
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is AnEnum
         assert foo_df.loc[0, "enum_field"] is AnEnum.A
@@ -356,9 +352,7 @@ class TestCompatibilityWithEnums:
             foo_df.validate()
 
     def test_storing_enum_members_as_names(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance])
-        foo_df.store_enum_members_as = "names"
-        foo_df.validate()
+        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="names")
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "A"
@@ -375,9 +369,7 @@ class TestCompatibilityWithEnums:
             foo_df.validate()
 
     def test_storing_enum_members_as_integer_values(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance])
-        foo_df.store_enum_members_as = "values"
-        foo_df.validate()
+        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="values")
         assert foo_df.dtypes["enum_field"] == np.dtype("int64")
         assert type(foo_df.loc[0, "enum_field"]) is np.int64
         assert foo_df.loc[0, "enum_field"] == 1
@@ -405,9 +397,9 @@ class TestCompatibilityWithEnums:
             enum_field: AnEnum
 
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
-        foo_df.store_enum_members_as = "values"
-        foo_df.validate()
+        foo_df = FooDataframe(
+            [Foo(enum_field=AnEnum.A)], store_enum_members_as="values"
+        )
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "a"
@@ -431,9 +423,9 @@ class TestCompatibilityWithEnums:
             enum_field: AnEnum
 
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
-        foo_df.store_enum_members_as = "values"
-        foo_df.validate()
+        foo_df = FooDataframe(
+            [Foo(enum_field=AnEnum.A)], store_enum_members_as="values"
+        )
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is ZoneInfo
         assert foo_df.loc[0, "enum_field"] == ZoneInfo("America/Toronto")
@@ -452,7 +444,6 @@ class TestCompatibilityWithLiterals:
 
     def test_with_mixed_type_values(self) -> None:
         foo_df = self.FooDataframe([self.Foo(literal_field=1)])
-        foo_df.validate()
         assert foo_df.dtypes["literal_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "literal_field"]) is int
         assert foo_df.loc[0, "literal_field"] == 1
@@ -615,10 +606,9 @@ class TestStoringNullableIntsAsFloats:
         foo_df = self.FooDataframe(
             [
                 self.Foo(int_field=1, nullable_int_field=2),
-            ]
+            ],
+            store_nullable_ints_as_floats=True,
         )
-        foo_df.store_nullable_ints_as_floats = True
-        foo_df.validate()
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
 
@@ -627,10 +617,9 @@ class TestStoringNullableIntsAsFloats:
             [
                 self.Foo(int_field=1, nullable_int_field=None),
                 self.Foo(int_field=1, nullable_int_field=2),
-            ]
+            ],
+            store_nullable_ints_as_floats=True,
         )
-        foo_df.store_nullable_ints_as_floats = True
-        foo_df.validate()
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
 
@@ -639,9 +628,8 @@ class TestStoringNullableIntsAsFloats:
             [
                 self.Foo(int_field=1, nullable_int_field=None),
             ],
+            store_nullable_ints_as_floats=True,
         )
-        foo_df.store_nullable_ints_as_floats = True
-        foo_df.validate()
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
 
@@ -660,9 +648,8 @@ class TestStoringNullableBoolsAsObjects:
             [
                 self.Foo(bool_field=True, nullable_bool_field=True),
             ],
+            store_nullable_bools_as_objects=True,
         )
-        foo_df.store_nullable_bools_as_objects = True
-        foo_df.validate()
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")
 
@@ -672,9 +659,8 @@ class TestStoringNullableBoolsAsObjects:
                 self.Foo(bool_field=True, nullable_bool_field=None),
                 self.Foo(bool_field=True, nullable_bool_field=True),
             ],
+            store_nullable_bools_as_objects=True,
         )
-        foo_df.store_nullable_bools_as_objects = True
-        foo_df.validate()
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")
 
@@ -683,8 +669,7 @@ class TestStoringNullableBoolsAsObjects:
             [
                 self.Foo(bool_field=True, nullable_bool_field=None),
             ],
+            store_nullable_bools_as_objects=True,
         )
-        foo_df.store_nullable_bools_as_objects = True
-        foo_df.validate()
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")

@@ -17,7 +17,6 @@ from utils import get_exactly_one
 class ObjectsBackingDataframe[T](ObjectsDataframeBase):
 
     def __iter__(self) -> Iterator[T]:
-        self.validate()
         for df_key, _ in super().iterrows():
             dataframe_backed_class = self._dataframe_objects_class
             dataframe_backed_intance = dataframe_backed_class(
