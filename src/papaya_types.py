@@ -15,7 +15,7 @@ from utils import get_exactly_one
 
 
 @dataclasses.dataclass
-class PyaTypesConfig:
+class PapayaTypesConfig:
     store_nullable_bools_as_objects: bool = False
     store_dates_as_timestamps: bool = False
     store_enum_members_as: Literal["members", "names", "values"] = "members"
@@ -23,12 +23,12 @@ class PyaTypesConfig:
 
 
 @dataclasses.dataclass
-class GeneralPyaType(abc.ABC):
+class GeneralPapayaType(abc.ABC):
     field_name: str
     annotated_type: type
     annotated_with: type | None
     nullable: bool
-    config: PyaTypesConfig
+    config: PapayaTypesConfig
 
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
@@ -60,7 +60,7 @@ class GeneralPyaType(abc.ABC):
 
 
 @dataclasses.dataclass
-class BooleanPyaType(GeneralPyaType):
+class BooleanPapayaType(GeneralPapayaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
@@ -89,7 +89,7 @@ class BooleanPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class DatePyaType(GeneralPyaType):
+class DatePapayaType(GeneralPapayaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
@@ -117,7 +117,7 @@ class DatePyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class EnumPyaType(GeneralPyaType):
+class EnumPapayaType(GeneralPapayaType):
     @property
     def enum_members(self) -> set[Any]:
         return set(member for member in self.annotated_type)
@@ -158,14 +158,14 @@ class EnumPyaType(GeneralPyaType):
                 checks=[pa.Check(lambda ser: ser.isin(self.enum_names))],
             )
         elif self.config.store_enum_members_as == "values":
-            enum_value_pya_type = find_pya_type(
+            enum_value_papaya_type = find_papaya_type(
                 field_name=self.field_name,
                 annotated_type=self.enum_values_type,
                 annotated_with=self.annotated_with,
                 nullable=self.nullable,
                 config=self.config,
             )
-            return enum_value_pya_type.validator(
+            return enum_value_papaya_type.validator(
                 df, checks=[pa.Check(lambda ser: ser.isin(self.enum_values))]
             )
 
@@ -213,7 +213,7 @@ class EnumPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class IntegerPyaType(GeneralPyaType):
+class IntegerPapayaType(GeneralPapayaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
         self.prevalidate_column(df)
@@ -242,7 +242,7 @@ class IntegerPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class LiteralPyaType(GeneralPyaType):
+class LiteralPapayaType(GeneralPapayaType):
     @property
     def literal_values(self) -> set[Any]:
         return {value for value in typing.get_args(self.annotated_type)}
@@ -257,14 +257,14 @@ class LiteralPyaType(GeneralPyaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
-        enum_value_pya_type = find_pya_type(
+        enum_value_papaya_type = find_papaya_type(
             field_name=self.field_name,
             annotated_type=self.literal_values_type,
             annotated_with=self.annotated_with,
             nullable=self.nullable,
             config=self.config,
         )
-        return enum_value_pya_type.validator(
+        return enum_value_papaya_type.validator(
             df, checks=[pa.Check(lambda ser: ser.isin(self.literal_values))]
         )
 
@@ -299,7 +299,7 @@ class LiteralPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class TimedeltaPyaType(GeneralPyaType):
+class TimedeltaPapayaType(GeneralPapayaType):
     @override
     def process_getter_value(
         self, value: pd.Timedelta
@@ -313,7 +313,7 @@ class TimedeltaPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class DatetimeyPyaType(GeneralPyaType):
+class DatetimeyPapayaType(GeneralPapayaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
@@ -332,36 +332,36 @@ class DatetimeyPyaType(GeneralPyaType):
 
 
 @dataclasses.dataclass
-class StringPyaType(GeneralPyaType):
+class StringPapayaType(GeneralPapayaType):
     @override
     def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
         self.prevalidate_column(df)
         return pa.Column(object, nullable=self.nullable, **kwargs)
 
 
-def find_pya_type(
+def find_papaya_type(
     field_name: str,
     annotated_type: type,
     annotated_with: type | None,
     nullable: bool,
-    config: PyaTypesConfig,
-) -> GeneralPyaType:
+    config: PapayaTypesConfig,
+) -> GeneralPapayaType:
     args = (field_name, annotated_type, annotated_with, nullable, config)
     if annotated_type is bool:
-        return BooleanPyaType(*args)
+        return BooleanPapayaType(*args)
     elif annotated_type is dt.date:
-        return DatePyaType(*args)
+        return DatePapayaType(*args)
     elif isinstance(annotated_type, EnumType):
-        return EnumPyaType(*args)
+        return EnumPapayaType(*args)
     elif annotated_type is int:
-        return IntegerPyaType(*args)
+        return IntegerPapayaType(*args)
     elif isinstance(annotated_type, typing._LiteralGenericAlias):
-        return LiteralPyaType(*args)
+        return LiteralPapayaType(*args)
     elif annotated_type is pd.Timedelta or annotated_type is dt.timedelta:
-        return TimedeltaPyaType(*args)
+        return TimedeltaPapayaType(*args)
     elif annotated_type is pd.Timestamp or annotated_type is dt.datetime:
-        return DatetimeyPyaType(*args)
+        return DatetimeyPapayaType(*args)
     elif annotated_type is str:
-        return StringPyaType(*args)
+        return StringPapayaType(*args)
     else:
-        return GeneralPyaType(*args)
+        return GeneralPapayaType(*args)

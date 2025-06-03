@@ -10,7 +10,7 @@ from pandera.engines.pandas_engine import DateTime
 from typing_extensions import Literal
 
 from objects_dataframe_base import ObjectsDataframeBase
-from pya_types import find_pya_type
+from papaya_types import find_papaya_type
 from utils import get_exactly_one
 
 
@@ -109,12 +109,12 @@ def dataframe_backed_object(cls):
             value = self.__df.loc[self.__df_key, field_name]
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
-            pya_type = find_pya_type(
+            papaya_type = find_papaya_type(
                 field_name,
                 *type(self)._process_type_annotation(field.type),
-                config=self.__df.pya_types_config,
+                config=self.__df.papaya_types_config,
             )
-            return pya_type.process_getter_value(value)
+            return papaya_type.process_getter_value(value)
         else:
             return getattr(self, f"__{field_name}")
 
@@ -122,12 +122,12 @@ def dataframe_backed_object(cls):
         if self.__df is not None and self.__df_key is not None:
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
-            pya_type = find_pya_type(
+            papaya_type = find_papaya_type(
                 field_name,
                 *type(self)._process_type_annotation(field.type),
-                config=self.__df.pya_types_config,
+                config=self.__df.papaya_types_config,
             )
-            self.__df.at[self.__df_key, field_name] = pya_type.process_setter_value(
+            self.__df.at[self.__df_key, field_name] = papaya_type.process_setter_value(
                 value
             )
         else:

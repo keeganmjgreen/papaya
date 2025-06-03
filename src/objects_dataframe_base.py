@@ -12,11 +12,11 @@ from pandera.backends.base import BaseSchemaBackend
 from pandera.backends.pandas.container import DataFrameSchemaBackend
 from pandera.engines.pandas_engine import DateTime
 
-from pya_types import PyaTypesConfig, find_pya_type
+from papaya_types import PapayaTypesConfig, find_papaya_type
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
-    pya_types_config: PyaTypesConfig
+    papaya_types_config: PapayaTypesConfig
 
     def __init__(
         self,
@@ -32,7 +32,7 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
     ) -> None:
         super().__init__(data, index, columns, dtype, copy)
 
-        self.pya_types_config = PyaTypesConfig(
+        self.papaya_types_config = PapayaTypesConfig(
             store_nullable_bools_as_objects,
             store_dates_as_timestamps,
             store_enum_members_as,
@@ -80,10 +80,10 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
     def _get_dataframe_schema(self) -> DataframeSchema:
         return DataframeSchema(
             {
-                f.name: find_pya_type(
+                f.name: find_papaya_type(
                     f.name,
                     *self._dataframe_objects_class._process_type_annotation(f.type),
-                    config=self.pya_types_config,
+                    config=self.papaya_types_config,
                 ).validator(self)
                 for f in dataclasses.fields(self._dataframe_objects_class)
             }
