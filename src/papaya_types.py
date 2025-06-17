@@ -8,18 +8,11 @@ from typing import Any, override
 
 import pandas as pd
 import pandera as pa
+from pandera.api.pandas.array import ArraySchema
 from pandera.engines.pandas_engine import DateTime
-from typing_extensions import Literal
 
+from papaya_config import PapayaConfig
 from utils import get_exactly_one
-
-
-@dataclasses.dataclass
-class PapayaTypesConfig:
-    store_nullable_bools_as_objects: bool = False
-    store_dates_as_timestamps: bool = False
-    store_enum_members_as: Literal["members", "names", "values"] = "members"
-    store_nullable_ints_as_floats: bool = False
 
 
 @dataclasses.dataclass
@@ -28,14 +21,21 @@ class GeneralPapayaType(abc.ABC):
     annotated_type: type
     annotated_with: type | None
     nullable: bool
-    config: PapayaTypesConfig
+    config: PapayaConfig
 
-    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> ArraySchema:
         self.prevalidate_column(df)
         try:
-            return pa.Column(self.annotated_type, nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                self.annotated_type,
+                nullable=self.nullable,
+                name=self.field_name,
+                **kwargs,
+            )
         except TypeError:
-            return pa.Column(object, nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                object, nullable=self.nullable, name=self.field_name, **kwargs
+            )
 
     def prevalidate_column(self, df: pd.DataFrame) -> None:
         return
@@ -62,14 +62,18 @@ class GeneralPapayaType(abc.ABC):
 @dataclasses.dataclass
 class BooleanPapayaType(GeneralPapayaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> ArraySchema:
         self.prevalidate_column(df)
         if not self.nullable:
-            return pa.Column(bool, nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                bool, nullable=self.nullable, name=self.field_name, **kwargs
+            )
         if self.config.store_nullable_bools_as_objects:
-            return pa.Column(object, nullable=True, **kwargs)
+            return ArraySchema(object, nullable=True, name=self.field_name, **kwargs)
         else:
-            return pa.Column(pd.BooleanDtype(), nullable=True, **kwargs)
+            return ArraySchema(
+                pd.BooleanDtype(), nullable=True, name=self.field_name, **kwargs
+            )
 
     @override
     def prevalidate_column(self, df: pd.DataFrame) -> None:
@@ -91,12 +95,19 @@ class BooleanPapayaType(GeneralPapayaType):
 @dataclasses.dataclass
 class DatePapayaType(GeneralPapayaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> ArraySchema:
         self.prevalidate_column(df)
         if self.config.store_dates_as_timestamps:
-            return pa.Column(DateTime(tz=None), nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                DateTime(tz=None),
+                nullable=self.nullable,
+                name=self.field_name,
+                **kwargs,
+            )
         else:
-            return pa.Column(object, nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                object, nullable=self.nullable, name=self.field_name, **kwargs
+            )
 
     @override
     def prevalidate_column(self, df: pd.DataFrame) -> None:
@@ -143,18 +154,20 @@ class EnumPapayaType(GeneralPapayaType):
             return object
 
     @override
-    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> ArraySchema:
         self.prevalidate_column(df)
         if self.config.store_enum_members_as == "members":
-            return pa.Column(
+            return ArraySchema(
                 object,
                 nullable=self.nullable,
+                name=self.field_name,
                 checks=[pa.Check(lambda ser: ser.isin(self.enum_members))],
             )
         elif self.config.store_enum_members_as == "names":
-            return pa.Column(
+            return ArraySchema(
                 str,
                 nullable=self.nullable,
+                name=self.field_name,
                 checks=[pa.Check(lambda ser: ser.isin(self.enum_names))],
             )
         elif self.config.store_enum_members_as == "values":
@@ -184,7 +197,7 @@ class EnumPapayaType(GeneralPapayaType):
             try:
                 df[self.field_name] = df[self.field_name].astype(self.enum_values_type)
             except (TypeError, ValueError):
-                pass
+                pass  # `.validate` will handle.
 
     @override
     def process_getter_value(self, value: Any) -> Any:
@@ -215,14 +228,18 @@ class EnumPapayaType(GeneralPapayaType):
 @dataclasses.dataclass
 class IntegerPapayaType(GeneralPapayaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs: dict[str, Any]) -> ArraySchema:
         self.prevalidate_column(df)
         if not self.nullable:
-            return pa.Column(int, nullable=self.nullable, **kwargs)
+            return ArraySchema(
+                int, nullable=self.nullable, name=self.field_name, **kwargs
+            )
         if self.config.store_nullable_ints_as_floats:
-            return pa.Column(float, nullable=True, **kwargs)
+            return ArraySchema(float, nullable=True, name=self.field_name, **kwargs)
         else:
-            return pa.Column(pd.Int64Dtype(), nullable=True, **kwargs)
+            return ArraySchema(
+                pd.Int64Dtype(), nullable=True, name=self.field_name, **kwargs
+            )
 
     @override
     def prevalidate_column(self, df: pd.DataFrame) -> None:
@@ -255,7 +272,7 @@ class LiteralPapayaType(GeneralPapayaType):
             return object
 
     @override
-    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs) -> ArraySchema:
         self.prevalidate_column(df)
         enum_value_papaya_type = find_papaya_type(
             field_name=self.field_name,
@@ -273,7 +290,7 @@ class LiteralPapayaType(GeneralPapayaType):
         try:
             df[self.field_name] = df[self.field_name].astype(self.literal_values_type)
         except (TypeError, ValueError):
-            pass
+            pass  # `.validate` will handle.
 
     @override
     def process_getter_value(self, value: Any) -> Any:
@@ -315,9 +332,11 @@ class TimedeltaPapayaType(GeneralPapayaType):
 @dataclasses.dataclass
 class DatetimeyPapayaType(GeneralPapayaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs) -> ArraySchema:
         self.prevalidate_column(df)
-        return pa.Column(self.annotated_with, nullable=self.nullable, **kwargs)
+        return ArraySchema(
+            self.annotated_with, nullable=self.nullable, name=self.field_name, **kwargs
+        )
 
     @override
     def process_getter_value(
@@ -334,9 +353,11 @@ class DatetimeyPapayaType(GeneralPapayaType):
 @dataclasses.dataclass
 class StringPapayaType(GeneralPapayaType):
     @override
-    def validator(self, df: pd.DataFrame, **kwargs) -> pa.Column:
+    def validator(self, df: pd.DataFrame, **kwargs) -> ArraySchema:
         self.prevalidate_column(df)
-        return pa.Column(object, nullable=self.nullable, **kwargs)
+        return ArraySchema(
+            object, nullable=self.nullable, name=self.field_name, **kwargs
+        )
 
 
 def find_papaya_type(
@@ -344,7 +365,7 @@ def find_papaya_type(
     annotated_type: type,
     annotated_with: type | None,
     nullable: bool,
-    config: PapayaTypesConfig,
+    config: PapayaConfig,
 ) -> GeneralPapayaType:
     args = (field_name, annotated_type, annotated_with, nullable, config)
     if annotated_type is bool:

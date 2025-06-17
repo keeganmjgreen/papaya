@@ -74,7 +74,8 @@ def dataframe_backed_object(cls):
             type_annotation = Literal[*literal_values]
 
         if isinstance(type_annotation, typing._AnnotatedAlias):
-            type_annotation, annotated_with = typing.get_args(type_annotation)
+            args = typing.get_args(type_annotation)
+            type_annotation, annotated_with = args[0], args[1]
         else:
             annotated_with = None
 
@@ -106,7 +107,14 @@ def dataframe_backed_object(cls):
 
     def fget(self, field_name: str) -> Any:
         if self.__df is not None and self.__df_key is not None:
-            value = self.__df.loc[self.__df_key, field_name]
+            if field_name in self.__df.columns:
+                value = self.__df.loc[self.__df_key, field_name]
+            elif isinstance(self.__df.index, pd.MultiIndex):
+                value = self.__df.loc[self.__df_key].name[
+                    list(self.__df.index.names).index(field_name)
+                ]
+            elif self.__df.index.name == field_name:
+                value = self.__df_key
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
             papaya_type = find_papaya_type(
@@ -120,6 +128,8 @@ def dataframe_backed_object(cls):
 
     def fset(self, value: Any, field_name: str) -> None:
         if self.__df is not None and self.__df_key is not None:
+            if field_name in self.__df.index.names:
+                raise SettingOnIndexLevelError
             fields = {f.name: f for f in dataclasses.fields(self)}
             field = fields[field_name]
             papaya_type = find_papaya_type(
@@ -144,3 +154,7 @@ def dataframe_backed_object(cls):
         )
 
     return cls
+
+
+class SettingOnIndexLevelError(Exception):
+    pass

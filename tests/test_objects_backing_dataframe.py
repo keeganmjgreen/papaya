@@ -13,9 +13,11 @@ from pandera.engines.pandas_engine import DateTime
 
 from objects_backing_dataframe import (
     ObjectsBackingDataframe,
+    SettingOnIndexLevelError,
     dataframe_backed_object,
 )
-from papaya_types import PapayaTypesConfig
+from objects_dataframe_base import DataframeIndex
+from papaya_config import PapayaConfig
 
 
 def test_dataframe_backed() -> None:
@@ -309,7 +311,7 @@ def test_storing_dates_as_timestamps():
     class Foo:
         date_field: dt.date
 
-        papaya_config = PapayaTypesConfig(store_dates_as_timestamps=True)
+        papaya_config = PapayaConfig(store_dates_as_timestamps=True)
 
     FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
     foo_df = FooDataframe([Foo(date_field=dt.date(2000, 4, 2))])
@@ -333,7 +335,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-            papaya_config = PapayaTypesConfig(store_enum_members_as="members")
+            papaya_config = PapayaConfig(store_enum_members_as="members")
 
         FooDataframe = ObjectsBackingDataframe[Foo]
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
@@ -358,7 +360,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-            papaya_config = PapayaTypesConfig(store_enum_members_as="names")
+            papaya_config = PapayaConfig(store_enum_members_as="names")
 
         FooDataframe = ObjectsBackingDataframe[Foo]
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
@@ -383,7 +385,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+            papaya_config = PapayaConfig(store_enum_members_as="values")
 
         FooDataframe = ObjectsBackingDataframe[Foo]
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
@@ -412,7 +414,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+            papaya_config = PapayaConfig(store_enum_members_as="values")
 
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
@@ -437,7 +439,7 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
-            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+            papaya_config = PapayaConfig(store_enum_members_as="values")
 
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
@@ -614,7 +616,7 @@ class TestStoringNullableIntsAsFloats:
         int_field: int
         nullable_int_field: int | None
 
-        papaya_config = PapayaTypesConfig(store_nullable_ints_as_floats=True)
+        papaya_config = PapayaConfig(store_nullable_ints_as_floats=True)
 
     FooDataframe = ObjectsBackingDataframe[Foo]
 
@@ -654,7 +656,7 @@ class TestStoringNullableBoolsAsObjects:
         bool_field: bool
         nullable_bool_field: bool | None
 
-        papaya_config = PapayaTypesConfig(store_nullable_bools_as_objects=True)
+        papaya_config = PapayaConfig(store_nullable_bools_as_objects=True)
 
     FooDataframe = ObjectsBackingDataframe[Foo]
 
@@ -685,3 +687,244 @@ class TestStoringNullableBoolsAsObjects:
         )
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")
+
+
+class TestWithIndex:
+    def test_with_set_index_set_to_true(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field: Annotated[int, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=True)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe([Foo(index_field=1, non_index_field=4.2)])
+        assert foo_df.index.dtype == np.dtype("int64")
+        assert foo_df.dtypes["non_index_field"] == np.dtype("float64")
+
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
+                    "index_field"
+                )
+            )
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
+                    "non_index_field"
+                )
+            )
+
+    def test_with_set_index_set_to_false(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field: Annotated[int, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=False)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
+                "index_field"
+            )
+        )
+        assert foo_df.index.dtype == np.dtype("int64")
+        assert foo_df.dtypes["non_index_field"] == np.dtype("float64")
+
+        with pytest.raises(ValueError):
+            FooDataframe([Foo(index_field=1, non_index_field=4.2)])
+
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
+                    "index_field", append=True
+                )
+            )
+
+    def test_getting_and_setting(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field: Annotated[int, DataframeIndex]
+            non_index_field: float
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
+                "index_field"
+            )
+        )
+        (foo_0,) = list(foo_df)
+
+        assert type(foo_0.index_field) is int
+        assert foo_0.index_field == 1
+        with pytest.raises(SettingOnIndexLevelError):
+            foo_0.index_field = 2
+
+        assert foo_0.non_index_field == 4.2
+        foo_0.non_index_field = 7.3
+        assert foo_0.non_index_field == 7.3
+
+    def test_with_datetimey_index(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field: Annotated[
+                Annotated[pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))],
+                DataframeIndex,
+            ]
+            non_index_field: float
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame(
+                [
+                    Foo(
+                        index_field=pd.Timestamp(
+                            "2000-04-02 23:59", tz="America/Toronto"
+                        ),
+                        non_index_field=4.2,
+                    )
+                ]
+            ).set_index("index_field")
+        )
+        assert foo_df.index.dtype == pd.DatetimeTZDtype(tz=ZoneInfo("America/Toronto"))
+
+
+class TestWithMultiIndex:
+    def test_with_set_index_set_to_true(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field_1: Annotated[int, DataframeIndex]
+            index_field_2: Annotated[str, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=True)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+        )
+        assert foo_df.index.dtypes["index_field_1"] == np.dtype("int64")
+        assert foo_df.index.dtypes["index_field_2"] == np.dtype("O")
+        assert foo_df.dtypes["non_index_field"] == np.dtype("float64")
+
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame(
+                    [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+                ).set_index("index_field_1")
+            )
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame(
+                    [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+                ).set_index(["index_field_1", "index_field_2"])
+            )
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame(
+                    [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+                ).set_index("non_index_field")
+            )
+
+    def test_with_set_index_set_to_false(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field_1: Annotated[int, DataframeIndex]
+            index_field_2: Annotated[str, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=False)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame(
+                [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+            ).set_index(["index_field_1", "index_field_2"])
+        )
+        assert foo_df.index.dtypes["index_field_1"] == np.dtype("int64")
+        assert foo_df.index.dtypes["index_field_2"] == np.dtype("O")
+        assert foo_df.dtypes["non_index_field"] == np.dtype("float64")
+
+        with pytest.raises(ValueError):
+            FooDataframe(
+                [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+            )
+
+        with pytest.raises(ValueError):
+            FooDataframe(
+                pd.DataFrame(
+                    [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+                ).set_index(["index_field_1", "index_field_2"], append=True)
+            )
+
+    def test_with_datetimey_index(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field_1: Annotated[
+                Annotated[pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))],
+                DataframeIndex,
+            ]
+            index_field_2: Annotated[str, DataframeIndex]
+            non_index_field: float
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame(
+                [
+                    Foo(
+                        index_field_1=pd.Timestamp(
+                            "2000-04-02 23:59", tz="America/Toronto"
+                        ),
+                        index_field_2="bar",
+                        non_index_field=4.2,
+                    )
+                ]
+            ).set_index(["index_field_1", "index_field_2"])
+        )
+        assert foo_df.index.dtypes["index_field_1"] == pd.DatetimeTZDtype(
+            tz=ZoneInfo("America/Toronto")
+        )
+
+    def test_getting_and_setting(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field_1: Annotated[int, DataframeIndex]
+            index_field_2: Annotated[str, DataframeIndex]
+            non_index_field: float
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+
+        foo_df = FooDataframe(
+            pd.DataFrame(
+                [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
+            ).set_index(["index_field_1", "index_field_2"])
+        )
+        (foo_0,) = list(foo_df)
+
+        assert type(foo_0.index_field_1) is int
+        assert foo_0.index_field_1 == 1
+        with pytest.raises(SettingOnIndexLevelError):
+            foo_0.index_field_1 = 2
+        assert type(foo_0.index_field_2) is str
+        assert foo_0.index_field_2 == "bar"
+
+        assert foo_0.non_index_field == 4.2
+        foo_0.non_index_field = 7.3
+        assert foo_0.non_index_field == 7.3
