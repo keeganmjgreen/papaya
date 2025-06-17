@@ -15,6 +15,7 @@ from objects_backing_dataframe import (
     ObjectsBackingDataframe,
     dataframe_backed_object,
 )
+from papaya_types import PapayaTypesConfig
 
 
 def test_dataframe_backed() -> None:
@@ -308,10 +309,10 @@ def test_storing_dates_as_timestamps():
     class Foo:
         date_field: dt.date
 
+        papaya_config = PapayaTypesConfig(store_dates_as_timestamps=True)
+
     FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-    foo_df = FooDataframe(
-        [Foo(date_field=dt.date(2000, 4, 2))], store_dates_as_timestamps=True
-    )
+    foo_df = FooDataframe([Foo(date_field=dt.date(2000, 4, 2))])
     assert foo_df.dtypes["date_field"] == np.dtype("<M8[ns]")
     assert type(foo_df.loc[0, "date_field"]) is pd.Timestamp
     assert foo_df.loc[0, "date_field"] == pd.Timestamp("2000-04-02")
@@ -325,17 +326,17 @@ def test_storing_dates_as_timestamps():
 
 
 class TestCompatibilityWithEnums:
-    @dataframe_backed_object
-    @dataclasses.dataclass
-    class Foo:
-        enum_field: AnEnum
-
-    foo_instance = Foo(enum_field=AnEnum.A)
-
-    FooDataframe = ObjectsBackingDataframe[Foo]
 
     def test_storing_enum_members_as_members(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="members")
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            enum_field: AnEnum
+
+            papaya_config = PapayaTypesConfig(store_enum_members_as="members")
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is AnEnum
         assert foo_df.loc[0, "enum_field"] is AnEnum.A
@@ -347,12 +348,21 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
 
     def test_storing_enum_members_as_names(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="names")
+
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            enum_field: AnEnum
+
+            papaya_config = PapayaTypesConfig(store_enum_members_as="names")
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "A"
@@ -364,12 +374,21 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
 
     def test_storing_enum_members_as_integer_values(self) -> None:
-        foo_df = self.FooDataframe([self.foo_instance], store_enum_members_as="values")
+
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            enum_field: AnEnum
+
+            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+
+        FooDataframe = ObjectsBackingDataframe[Foo]
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("int64")
         assert type(foo_df.loc[0, "enum_field"]) is np.int64
         assert foo_df.loc[0, "enum_field"] == 1
@@ -381,7 +400,7 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
 
@@ -396,10 +415,10 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
+            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-        foo_df = FooDataframe(
-            [Foo(enum_field=AnEnum.A)], store_enum_members_as="values"
-        )
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is str
         assert foo_df.loc[0, "enum_field"] == "a"
@@ -407,7 +426,7 @@ class TestCompatibilityWithEnums:
         assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
-        foo_df = self.FooDataframe([self.Foo(enum_field="<invalid-value>")])
+        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
             foo_df.validate()
 
@@ -422,10 +441,10 @@ class TestCompatibilityWithEnums:
         class Foo:
             enum_field: AnEnum
 
+            papaya_config = PapayaTypesConfig(store_enum_members_as="values")
+
         FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
-        foo_df = FooDataframe(
-            [Foo(enum_field=AnEnum.A)], store_enum_members_as="values"
-        )
+        foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is ZoneInfo
         assert foo_df.loc[0, "enum_field"] == ZoneInfo("America/Toronto")
@@ -600,14 +619,15 @@ class TestStoringNullableIntsAsFloats:
         int_field: int
         nullable_int_field: int | None
 
+        papaya_config = PapayaTypesConfig(store_nullable_ints_as_floats=True)
+
     FooDataframe = ObjectsBackingDataframe[Foo]
 
     def test_with_no_nulls(self) -> None:
         foo_df = self.FooDataframe(
             [
                 self.Foo(int_field=1, nullable_int_field=2),
-            ],
-            store_nullable_ints_as_floats=True,
+            ]
         )
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
@@ -617,8 +637,7 @@ class TestStoringNullableIntsAsFloats:
             [
                 self.Foo(int_field=1, nullable_int_field=None),
                 self.Foo(int_field=1, nullable_int_field=2),
-            ],
-            store_nullable_ints_as_floats=True,
+            ]
         )
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
@@ -627,8 +646,7 @@ class TestStoringNullableIntsAsFloats:
         foo_df = self.FooDataframe(
             [
                 self.Foo(int_field=1, nullable_int_field=None),
-            ],
-            store_nullable_ints_as_floats=True,
+            ]
         )
         assert foo_df.dtypes["int_field"] == np.dtype("int64")
         assert foo_df.dtypes["nullable_int_field"] == np.dtype("float64")
@@ -641,14 +659,15 @@ class TestStoringNullableBoolsAsObjects:
         bool_field: bool
         nullable_bool_field: bool | None
 
+        papaya_config = PapayaTypesConfig(store_nullable_bools_as_objects=True)
+
     FooDataframe = ObjectsBackingDataframe[Foo]
 
     def test_with_no_nulls(self) -> None:
         foo_df = self.FooDataframe(
             [
                 self.Foo(bool_field=True, nullable_bool_field=True),
-            ],
-            store_nullable_bools_as_objects=True,
+            ]
         )
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")
@@ -658,8 +677,7 @@ class TestStoringNullableBoolsAsObjects:
             [
                 self.Foo(bool_field=True, nullable_bool_field=None),
                 self.Foo(bool_field=True, nullable_bool_field=True),
-            ],
-            store_nullable_bools_as_objects=True,
+            ]
         )
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")
@@ -668,8 +686,7 @@ class TestStoringNullableBoolsAsObjects:
         foo_df = self.FooDataframe(
             [
                 self.Foo(bool_field=True, nullable_bool_field=None),
-            ],
-            store_nullable_bools_as_objects=True,
+            ]
         )
         assert foo_df.dtypes["bool_field"] == np.dtype("bool")
         assert foo_df.dtypes["nullable_bool_field"] == np.dtype("O")

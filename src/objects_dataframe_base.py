@@ -4,7 +4,7 @@ import abc
 import dataclasses
 import typing
 import warnings
-from typing import Any, Iterator, Literal, Optional, Type
+from typing import Any, Iterator, Optional, Type
 
 import pandas as pd
 import pandera.pandas as pa
@@ -16,29 +16,6 @@ from papaya_types import PapayaTypesConfig, find_papaya_type
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
-    papaya_types_config: PapayaTypesConfig
-
-    def __init__(
-        self,
-        data=None,
-        index=None,
-        columns=None,
-        dtype=None,
-        copy=None,
-        store_nullable_bools_as_objects: bool = False,
-        store_dates_as_timestamps: bool = False,
-        store_enum_members_as: Literal["members", "names", "values"] = "members",
-        store_nullable_ints_as_floats: bool = False,
-    ) -> None:
-        super().__init__(data, index, columns, dtype, copy)
-
-        self.papaya_types_config = PapayaTypesConfig(
-            store_nullable_bools_as_objects,
-            store_dates_as_timestamps,
-            store_enum_members_as,
-            store_nullable_ints_as_floats,
-        )
-
     def __setattr__(self, name: str, value: Any) -> None:
         super().__setattr__(name, value)
 
@@ -83,10 +60,16 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
                 f.name: find_papaya_type(
                     f.name,
                     *self._dataframe_objects_class._process_type_annotation(f.type),
-                    config=self.papaya_types_config,
+                    config=self.papaya_config,
                 ).validator(self)
                 for f in dataclasses.fields(self._dataframe_objects_class)
             }
+        )
+
+    @property
+    def papaya_config(self) -> PapayaTypesConfig:
+        return getattr(
+            self._dataframe_objects_class, "papaya_config", PapayaTypesConfig()
         )
 
     @property

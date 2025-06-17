@@ -112,7 +112,7 @@ def dataframe_backed_object(cls):
             papaya_type = find_papaya_type(
                 field_name,
                 *type(self)._process_type_annotation(field.type),
-                config=self.__df.papaya_types_config,
+                config=self.__df.papaya_config,
             )
             return papaya_type.process_getter_value(value)
         else:
@@ -125,7 +125,7 @@ def dataframe_backed_object(cls):
             papaya_type = find_papaya_type(
                 field_name,
                 *type(self)._process_type_annotation(field.type),
-                config=self.__df.papaya_types_config,
+                config=self.__df.papaya_config,
             )
             self.__df.at[self.__df_key, field_name] = papaya_type.process_setter_value(
                 value
