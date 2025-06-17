@@ -2,7 +2,9 @@ site_name: Papaya
 nav:
   - Home: index.md
   - Motivation: motivation.md
-  - Usage: usage.md
+  - Usage:
+    - General Usage: usage/usage.md
+    - Datetimes and Timestamps: usage/datetimes_and_timestamps.md
   - Supported Data Types: supported_data_types.md
   - Use cases: use_cases.md
 theme:
