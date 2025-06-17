@@ -183,7 +183,7 @@ class EnumPapayaType(GeneralPapayaType):
             )
             try:
                 df[self.field_name] = df[self.field_name].astype(self.enum_values_type)
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
 
     @override

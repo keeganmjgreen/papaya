@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import abc
+import copy
 import dataclasses
 import typing
 import warnings
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Iterator, Optional, Type, _GenericAlias
 
 import pandas as pd
 import pandera.pandas as pa
@@ -13,6 +14,49 @@ from pandera.backends.pandas.container import DataFrameSchemaBackend
 from pandera.engines.pandas_engine import DateTime
 
 from papaya_types import PapayaTypesConfig, find_papaya_type
+
+# The following is copied from module `pandera.typing.common`, with `DataFrameBase`
+# replaced with `ObjectsDataframeBase`. Refer to `ObjectsDataframeBase.__setattr__` for
+# more information.
+
+__orig_generic_alias_call = copy.copy(_GenericAlias.__call__)
+
+
+def __patched_generic_alias_call(self, *args, **kwargs):
+    """
+    Patched implementation of _GenericAlias.__call__ so that validation errors
+    can be raised when instantiating an instance of ObjectsBackingDataframe generics,
+    e.g. ObjectsBackingDataframe[A](data).
+    """
+    if ObjectsDataframeBase not in self.__origin__.__bases__:
+        return __orig_generic_alias_call(self, *args, **kwargs)
+
+    if not self._inst:
+        raise TypeError(
+            f"Type {self._name} cannot be instantiated; "
+            f"use {self.__origin__.__name__}() instead"
+        )
+    result = self.__origin__(*args, **kwargs)
+    try:
+        result.__orig_class__ = self
+    # Limit the patched behavior to subset of exception types
+    except (
+        TypeError,
+        pa.errors.SchemaError,
+        pa.errors.SchemaInitError,
+        pa.errors.SchemaDefinitionError,
+    ):
+        raise
+    # In python 3.11.9, all exceptions when setting attributes when defining
+    # _GenericAlias subclasses are caught and ignored.
+    except Exception:  # pylint: disable=broad-except
+        pass
+    return result
+
+
+_GenericAlias.__call__ = __patched_generic_alias_call
+
+# The preceeding is copied from module `pandera.typing.common`.
 
 
 class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
@@ -31,6 +75,10 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
         # use it to validate the DataFrame. This is also what Pandera does.
         if name == "__orig_class__":
             self.validate()
+            # In at least some Python versions, any errors encountered by Python when
+            # setting `__orig_class__` are caught, preventing us from raising from
+            # `.validate` as desired. `__patched_generic_alias_call` overrides this
+            # Python behavior.
 
     def validate(self) -> None:
         schema = self._get_dataframe_schema()

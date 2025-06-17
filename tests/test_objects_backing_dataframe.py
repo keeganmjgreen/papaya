@@ -348,9 +348,8 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
-            foo_df.validate()
+            FooDataframe([Foo(enum_field="<invalid-value>")])
 
     def test_storing_enum_members_as_names(self) -> None:
 
@@ -374,9 +373,8 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
-            foo_df.validate()
+            FooDataframe([Foo(enum_field="<invalid-value>")])
 
     def test_storing_enum_members_as_integer_values(self) -> None:
 
@@ -400,9 +398,8 @@ class TestCompatibilityWithEnums:
         (foo_0,) = list(foo_df)
         assert foo_0.enum_field is AnEnum.B
 
-        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
-            foo_df.validate()
+            FooDataframe([Foo(enum_field="<invalid-value>")])
 
     def test_storing_enum_members_as_string_values(self) -> None:
         class AnEnum(Enum):
@@ -426,9 +423,8 @@ class TestCompatibilityWithEnums:
         assert type(foo_0.enum_field) is AnEnum
         assert foo_0.enum_field is AnEnum.A
 
-        foo_df = FooDataframe([Foo(enum_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
-            foo_df.validate()
+            FooDataframe([Foo(enum_field="<invalid-value>")])
 
     def test_storing_enum_members_as_object_values(self) -> None:
         class AnEnum(Enum):
@@ -471,9 +467,8 @@ class TestCompatibilityWithLiterals:
         assert foo_0.literal_field == 1
 
     def test_validating_literal_values(self) -> None:
-        foo_df = self.FooDataframe([self.Foo(literal_field="<invalid-value>")])
         with pytest.raises(pa.errors.SchemaError):
-            foo_df.validate()
+            self.FooDataframe([self.Foo(literal_field="<invalid-value>")])
 
 
 def _check_foo_types(foo_instance: type) -> None:
