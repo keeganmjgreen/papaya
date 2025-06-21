@@ -337,7 +337,7 @@ class TestCompatibilityWithEnums:
 
             papaya_config = PapayaConfig(store_enum_members_as="members")
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is AnEnum
@@ -362,7 +362,7 @@ class TestCompatibilityWithEnums:
 
             papaya_config = PapayaConfig(store_enum_members_as="names")
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("O")
         assert type(foo_df.loc[0, "enum_field"]) is str
@@ -387,7 +387,7 @@ class TestCompatibilityWithEnums:
 
             papaya_config = PapayaConfig(store_enum_members_as="values")
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
         foo_df = FooDataframe([Foo(enum_field=AnEnum.A)])
         assert foo_df.dtypes["enum_field"] == np.dtype("int64")
         assert type(foo_df.loc[0, "enum_field"]) is np.int64
@@ -699,7 +699,7 @@ class TestWithIndex:
 
             papaya_config = PapayaConfig(set_index=True)
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe([Foo(index_field=1, non_index_field=4.2)])
         assert foo_df.index.dtype == np.dtype("int64")
@@ -727,7 +727,7 @@ class TestWithIndex:
 
             papaya_config = PapayaConfig(set_index=False)
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
@@ -754,7 +754,7 @@ class TestWithIndex:
             index_field: Annotated[int, DataframeIndex]
             non_index_field: float
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame([Foo(index_field=1, non_index_field=4.2)]).set_index(
@@ -782,7 +782,7 @@ class TestWithIndex:
             ]
             non_index_field: float
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame(
@@ -810,7 +810,7 @@ class TestWithMultiIndex:
 
             papaya_config = PapayaConfig(set_index=True)
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             [Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2)]
@@ -848,7 +848,7 @@ class TestWithMultiIndex:
 
             papaya_config = PapayaConfig(set_index=False)
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame(
@@ -882,7 +882,7 @@ class TestWithMultiIndex:
             index_field_2: Annotated[str, DataframeIndex]
             non_index_field: float
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame(
@@ -909,7 +909,7 @@ class TestWithMultiIndex:
             index_field_2: Annotated[str, DataframeIndex]
             non_index_field: float
 
-        FooDataframe = ObjectsBackingDataframe[Foo]
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
 
         foo_df = FooDataframe(
             pd.DataFrame(
