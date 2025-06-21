@@ -9,21 +9,25 @@
       
       
       
+        <link rel="prev" href="usage.html">
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+        <link rel="next" href="index_and_multiindex_support.html">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
     
     
       
-        <title>Papaya</title>
+        <title>Datetimes and Timestamps - Papaya</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.342714a4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
       
         
-        <link rel="stylesheet" href="/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -42,9 +46,9 @@
       
     
     
-      <link rel="stylesheet" href="/assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -69,6 +73,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#special-case-datetimestimestamps" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -81,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/index.html" title="Papaya" class="md-header__button md-logo" aria-label="Papaya" data-md-component="logo">
+    <a href="../index.html" title="Papaya" class="md-header__button md-logo" aria-label="Papaya" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -101,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Datetimes and Timestamps
             
           </span>
         </div>
@@ -165,7 +174,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/index.html" title="Papaya" class="md-nav__button md-logo" aria-label="Papaya" data-md-component="logo">
+    <a href="../index.html" title="Papaya" class="md-nav__button md-logo" aria-label="Papaya" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -183,7 +192,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/index.html" class="md-nav__link">
+      <a href="../index.html" class="md-nav__link">
         
   
   
@@ -205,7 +214,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/motivation.html" class="md-nav__link">
+      <a href="../motivation.html" class="md-nav__link">
         
   
   
@@ -224,18 +233,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -251,7 +262,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Usage
@@ -265,7 +276,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/usage/usage.html" class="md-nav__link">
+      <a href="usage.html" class="md-nav__link">
         
   
   
@@ -285,10 +296,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/usage/datetimes_and_timestamps.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="datetimes_and_timestamps.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -299,6 +319,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -311,7 +332,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/usage/index_and_multiindex_support.html" class="md-nav__link">
+      <a href="index_and_multiindex_support.html" class="md-nav__link">
         
   
   
@@ -341,7 +362,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/supported_data_types.html" class="md-nav__link">
+      <a href="../supported_data_types.html" class="md-nav__link">
         
   
   
@@ -363,7 +384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/use_cases.html" class="md-nav__link">
+      <a href="../use_cases.html" class="md-nav__link">
         
   
   
@@ -395,6 +416,8 @@
   
   
   
+    
+  
   
 </nav>
                   </div>
@@ -406,8 +429,41 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+
+<h1 id="special-case-datetimestimestamps">Special case: datetimes/timestamps</h1>
+<p>The data type of a pandas datetime/timestamp column incorporates the time zone (or lack thereof) of the column&rsquo;s data. This essentially requires all datetime/timestamp values therein to have the same time zone. It is impossible to mix time zones in a datetime column.</p>
+<p>This is good design both in terms of:</p>
+<ul>
+<li>
+<p>Memory usage: The time zone info is stored only once rather than for each value.</p>
+</li>
+<li>
+<p>Data validation: It is good practice to store all timestamps in UTC and convert to a relevant local time zone only when necessary. If a datetime column stores data for only one locale, which is absolutely possible depending on the application, it is acceptable to use the local time zone.</p>
+</li>
+</ul>
+<p>However, individual <code>datetime</code> objects do not support enforcing a specific time zone, or enforcing time zone awareness at all, because a <code>datetime</code> type annotation does not include the time zone. This is not just generally unfortunate; it makes it difficult to convert between a DataFrame-backed dataclass and its backing DataFrame when the dataclass has a <code>datetime</code>-type field. The corresponding column in the DataFrame can only store one time zone &ndash; which time zone should it store? The time zone cannot be reliably inferred from the individual <code>datetime</code> values, as they could have a mix of time zones.</p>
+<p>The solution is to annotate <code>datetime.datetime</code> (or <code>pandas.Timestamp</code>) fields with a pandera <code>DateTime</code> object that specifies whether the field&rsquo;s values have a time zone and, if they do, which it is:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">TODO</span>
+</span></code></pre></div>
+<p>Failure to do this will result in the following error:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>TODO
+</span></code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -443,10 +499,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/", "features": ["content.code.annotate", "content.code.copy"], "search": "/assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.code.copy"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/assets/javascripts/bundle.13a4f30d.min.js"></script>
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
       
     
   </body>
