@@ -747,6 +747,25 @@ class TestWithIndex:
                 )
             )
 
+    def test_ensuring_unique_index(self) -> None:
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field: Annotated[int, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=True)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
+
+        with pytest.raises(pa.errors.SchemaError):
+            FooDataframe(
+                [
+                    Foo(index_field=1, non_index_field=4.2),
+                    Foo(index_field=1, non_index_field=7.3),
+                ]
+            )
+
     def test_getting_and_setting(self) -> None:
         @dataframe_backed_object
         @dataclasses.dataclass
@@ -900,6 +919,40 @@ class TestWithMultiIndex:
         assert foo_df.index.dtypes["index_field_1"] == pd.DatetimeTZDtype(
             tz=ZoneInfo("America/Toronto")
         )
+
+    def test_ensuring_unique_multiindex(self) -> None:
+
+        @dataframe_backed_object
+        @dataclasses.dataclass
+        class Foo:
+            index_field_1: Annotated[int, DataframeIndex]
+            index_field_2: Annotated[str, DataframeIndex]
+            non_index_field: float
+
+            papaya_config = PapayaConfig(set_index=True)
+
+        FooDataframe = ObjectsBackingDataframe[Foo]  # noqa: N806
+
+        FooDataframe(
+            [
+                Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2),
+                Foo(index_field_1=1, index_field_2="baz", non_index_field=7.3),
+            ]
+        )
+
+        # With pandas >~2.0.3, the following fails with
+        # ValueError("Columns with duplicate values are not supported in stack"),
+        # instead of SchemaError, via pandera function `reshape_failure_cases`.
+        # https://github.com/unionai-oss/pandera/issues/1328
+        try:
+            FooDataframe(
+                [
+                    Foo(index_field_1=1, index_field_2="bar", non_index_field=4.2),
+                    Foo(index_field_1=1, index_field_2="bar", non_index_field=7.3),
+                ]
+            )
+        except Exception as e:
+            assert type(e) in [pa.errors.SchemaError, ValueError]
 
     def test_getting_and_setting(self) -> None:
         @dataframe_backed_object

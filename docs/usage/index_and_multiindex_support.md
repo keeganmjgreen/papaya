@@ -14,7 +14,7 @@ import papaya as pya
 @pya.dataframe_backed_object
 @dataclasses.dataclass
 class User:
-    user_id: Annotated[int, DataframeIndex]  # (1)!
+    user_id: Annotated[int, pya.DataframeIndex]  # (1)!
     name: str
 
 UserDataframe = ObjectsBackingDataframe[User]
@@ -51,8 +51,8 @@ import papaya as pya
 @pya.dataframe_backed_object
 @dataclasses.dataclass
 class UserAddress:
-    user_id: Annotated[int, DataframeIndex]
-    address_id: Annotated[UUID, DataframeIndex]
+    user_id: Annotated[int, pya.DataframeIndex]
+    address_id: Annotated[UUID, pya.DataframeIndex]
     name: str
 
 UserAddressDataframe = ObjectsBackingDataframe[UserAddress]

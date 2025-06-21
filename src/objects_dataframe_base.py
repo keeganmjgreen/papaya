@@ -110,17 +110,21 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
             field_to_schema_dict[f] = s
 
         if len(self._index_fields) == 0:
-            index_schema = None
+            index_schema = pa.Index(unique=True)
+        elif len(self._index_fields) == 1:
+            index_field = get_exactly_one(self._index_fields)
+            index_schema_dict = field_to_schema_dict[index_field]
+            index_schema_dict["unique"] = True
+            index_schema = pa.Index(**index_schema_dict)
         else:
-            index_levels = [
-                pa.Index(**s)
-                for f, s in field_to_schema_dict.items()
-                if f in self._index_fields
-            ]
-            if len(index_levels) == 1:
-                index_schema = get_exactly_one(index_levels)
-            else:
-                index_schema = pa.MultiIndex(index_levels)
+            index_schema = pa.MultiIndex(
+                [
+                    pa.Index(**s)
+                    for f, s in field_to_schema_dict.items()
+                    if f in self._index_fields
+                ],
+                unique=[f.name for f in self._index_fields],
+            )
 
         return DataframeSchema(
             {
@@ -191,6 +195,7 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
                             self.index.get_level_values(field.name), dtype
                         ),
                         level=field.name,
+                        verify_integrity=False,
                     )
                 else:
                     self.index = self._process_field(self.index, dtype)
