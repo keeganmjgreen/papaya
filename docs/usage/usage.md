@@ -56,14 +56,14 @@ user_df.dtypes
 
 If the data types are incompatible with the dataclass's type annotations, the validation will fail and raise a Pandera `SchemaError`. An `ObjectsBackingDataframe` can be validated at any time by calling its `validate()` method.
 
-`user_df` can be used like a normal `pandas.DataFrame`, except `list(user_df)` returns a list of `User` instances (rather than returning the dataframe's column names), and iterating over `user_df` iterates over `User` instances (rather than iterating over the dataframe's column names):
+`user_df` can be used like any other `pandas.DataFrame`, except `list(user_df)` returns a list of `User` instances (rather than returning the dataframe's column names), and iterating over `user_df` iterates over `User` instances (rather than iterating over the dataframe's column names):
 
 ```python
 users = list(user_df)
 
 for user in user_df:
     print(user)  # `User(user_id=0, name="Wall-E", account_balance=42.0, points_balance=None)`
-    print(user.name)  # `"Wall-E"`
+    print(user.name)  # `'Wall-E'`
 ```
 
 These `users` are backed by `user_df` (even if `user_df` is deleted or goes out of scope).
@@ -72,7 +72,7 @@ Papaya's most important feature is that `user[0].name` is not merely *equal to* 
 
 ```python
 users[0].name = "Burn-E"
-user_df.loc[0, "name"]  # `"Burn-E"`
+user_df.loc[0, "name"]  # `'Burn-E'`
 ```
 
 > Note: `pandas.DataFrame`s can be instantiated from dataclass instances, and `ObjectsBackingDataframe`s are no exception, e.g.:
@@ -89,27 +89,3 @@ user_df.loc[0, "name"]  # `"Burn-E"`
 ## Objects-Convertible Dataframe
 
 TODO
-
-## Special case: datetimes/timestamps
-
-The data type of a pandas datetime/timestamp column incorporates the time zone (or lack thereof) of the column's data. This essentially requires all datetime/timestamp values therein to have the same time zone. It is impossible to mix time zones in a datetime column.
-
-This is good design both in terms of:
-
-- Memory usage: The time zone info is stored only once rather than for each value.
-
-- Data validation: It is good practice to store all timestamps in UTC and convert to a relevant local time zone only when necessary. If a datetime column stores data for only one locale, which is absolutely possible depending on the application, it is acceptable to use the local time zone.
-
-However, individual `datetime` objects do not support enforcing a specific time zone, or enforcing time zone awareness at all, because a `datetime` type annotation does not include the time zone. This is not just generally unfortunate; it makes it difficult to convert between a DataFrame-backed dataclass and its backing DataFrame when the dataclass has a `datetime`-type field. The corresponding column in the DataFrame can only store one time zone -- which time zone should it store? The time zone cannot be reliably inferred from the individual `datetime` values, as they could have a mix of time zones.
-
-The solution is to annotate `datetime.datetime` (or `pandas.Timestamp`) fields with a pandera `DateTime` object that specifies whether the field's values have a time zone and, if they do, which it is:
-
-```python
-TODO
-```
-
-Failure to do this will result in the following error:
-
-```
-TODO
-```

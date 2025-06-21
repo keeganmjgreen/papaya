@@ -30,7 +30,7 @@ def test_readme_example() -> None:
         print(user)
         # `User(user_id=0, name="Wall-E", account_balance=42.0, points_balance=None)`
         print(user.name)
-        # `"Wall-E"`
+        # `'Wall-E'`
 
     users[0].name = "Burn-E"
     assert user_df.loc[0, "name"] == "Burn-E"
