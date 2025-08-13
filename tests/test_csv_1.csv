@@ -1,0 +1,2 @@
+bool_field,date_field,enum_field,float_field,int_field,list_field,literal_field,pandas_timedelta_field,pandas_timestamp_w_tzinfo_field,pandas_timestamp_wo_tzinfo_field,pydatetime_w_tzinfo_field,pydatetime_wo_tzinfo_field,pytimedelta_field,str_field,time_w_tzinfo_field,time_wo_tzinfo_field,uuid_field,zone_info_field
+True,2000-04-02,AnEnum.A,4.2,42,"[4, 2]",1,4 days 02:00:00,2000-04-02 23:59:00-04:00,2000-04-02 23:59:00,2000-04-02 23:59:00-04:00,2000-04-02,4 days 02:00:00,bar,23:59:00,23:59:00,793ac095-ee30-44ab-a807-4ef28f879c1e,America/Toronto

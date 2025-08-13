@@ -5,10 +5,11 @@ import copy
 import dataclasses
 import typing
 import warnings
-from typing import Any, Iterator, Optional, Type, _GenericAlias
+from typing import Any, Iterator, Optional, Self, Type, _GenericAlias
 
 import pandas as pd
 import pandera.pandas as pa
+from pandas.io.parsers import readers
 from pandera import DataType, MultiIndex
 from pandera.backends.base import BaseSchemaBackend
 from pandera.backends.pandas.container import DataFrameSchemaBackend
@@ -254,6 +255,16 @@ class ObjectsDataframeBase[T](pd.DataFrame, abc.ABC):
     @abc.abstractmethod
     def __iter__(self) -> Iterator[T]:
         raise NotImplementedError
+
+    @classmethod
+    def from_csv(
+        cls,
+        filepath_or_buffer: (
+            readers.FilePath | readers.ReadCsvBuffer[bytes] | readers.ReadCsvBuffer[str]
+        ),
+        **kwargs: dict[str, Any],
+    ) -> Self:
+        return cls(pd.read_csv(filepath_or_buffer, **kwargs))
 
 
 class DataframeIndex:

@@ -981,3 +981,36 @@ class TestWithMultiIndex:
         assert foo_0.non_index_field == 4.2
         foo_0.non_index_field = 7.3
         assert foo_0.non_index_field == 7.3
+
+
+class TestFromCsvWithNonNullableDataTypes:
+    @dataframe_backed_object
+    @dataclasses.dataclass
+    class Foo:
+        bool_field: bool
+        date_field: dt.date
+        enum_field: AnEnum
+        float_field: float
+        int_field: int
+        list_field: list[int]
+        literal_field: Literal[1, 2, 3]
+        pandas_timedelta_field: pd.Timedelta
+        pandas_timestamp_w_tzinfo_field: Annotated[
+            pd.Timestamp, DateTime(tz=ZoneInfo("America/Toronto"))
+        ]
+        pandas_timestamp_wo_tzinfo_field: Annotated[pd.Timestamp, DateTime(tz=None)]
+        pydatetime_w_tzinfo_field: Annotated[
+            dt.datetime, DateTime(tz=ZoneInfo("America/Toronto"))
+        ]
+        pydatetime_wo_tzinfo_field: Annotated[dt.datetime, DateTime(tz=None)]
+        pytimedelta_field: dt.timedelta
+        str_field: str
+        time_w_tzinfo_field: dt.time
+        time_wo_tzinfo_field: dt.time
+        uuid_field: UUID
+        zone_info_field: ZoneInfo
+
+    FooDataframe = ObjectsBackingDataframe[Foo]
+
+    def test_with_no_nulls(self) -> None:
+        self.FooDataframe.from_csv("tests/test_csv_1.csv")
